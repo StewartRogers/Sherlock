@@ -12,7 +12,8 @@ export function LoginForm() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting || !passcode) return;
+    const entered = passcode.trim();
+    if (submitting || !entered) return;
 
     setSubmitting(true);
     setError(null);
@@ -21,7 +22,7 @@ export function LoginForm() {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ passcode }),
+        body: JSON.stringify({ passcode: entered }),
       });
 
       if (!response.ok) {

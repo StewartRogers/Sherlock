@@ -58,12 +58,15 @@ export async function POST(request: NextRequest) {
   let passcode = "";
   try {
     const body = await request.json();
-    passcode = typeof body?.passcode === "string" ? body.passcode : "";
+    // Trimmed because the passcode is meant to be pasted, and a paste routinely
+    // carries a trailing space or newline. Both sides are trimmed so a stray
+    // space in the dashboard value cannot lock everyone out either.
+    passcode = typeof body?.passcode === "string" ? body.passcode.trim() : "";
   } catch {
     return NextResponse.json({ error: "That passcode was not accepted." }, { status: 400 });
   }
 
-  if (!(await safeEqual(passcode, expected))) {
+  if (!(await safeEqual(passcode, expected.trim()))) {
     return NextResponse.json({ error: "That passcode was not accepted." }, { status: 401 });
   }
 
