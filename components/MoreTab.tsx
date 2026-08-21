@@ -12,6 +12,11 @@ const ENTRIES: { tab: Tab; title: string; meta: string }[] = [
 export function MoreTab() {
   const { setTab } = useSherlock();
 
+  async function lock() {
+    await fetch("/api/login", { method: "DELETE" });
+    window.location.assign("/login");
+  }
+
   return (
     <div className="sh-measure">
       <div className="sh-kicker">More</div>
@@ -30,6 +35,18 @@ export function MoreTab() {
             </div>
           </button>
         ))}
+      </div>
+
+      <div className="sh-section">
+        <div className="sh-kicker">Session</div>
+        <div className="sh-list">
+          <button type="button" className="sh-row" style={{ cursor: "pointer" }} onClick={lock}>
+            <div style={{ flex: 1 }}>
+              <div className="sh-row-title">Lock this device</div>
+              <div className="sh-row-meta">Require the passcode again on this browser</div>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );
