@@ -15,7 +15,7 @@ placeholders rather than real device APIs.
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 20.9 or newer (required by Next.js 16)
 - npm
 
 ## Getting Started
@@ -80,7 +80,8 @@ environment variables drive it:
 | `APP_PASSCODE` | The passcode inspectors type in. Anyone who has it gets in, so make it long and random and share it out of band. |
 | `AUTH_SECRET` | Signing key for the session cookie. Any long random string; `openssl rand -base64 32` is fine. Changing it signs everyone out. |
 
-`middleware.ts` checks every request that is not `/login` or `/api/login`. Without a valid
+`proxy.ts` (Next.js 16's rename of the `middleware` convention) checks every request
+that is not `/login` or `/api/login`. Without a valid
 session it redirects to the passcode screen, and if either variable is missing it returns
 503 rather than serving the app — a misconfiguration locks the door, it does not open it.
 
@@ -139,7 +140,7 @@ means editing that token block, not the components.
 │   ├── data.ts            # seed casefiles, evidence, report copy, graph
 │   ├── store.tsx          # single in-memory store behind a React context
 │   └── types.ts
-├── middleware.ts          # passcode gate on every route
+├── proxy.ts               # passcode gate on every route (was middleware.ts)
 └── next.config.mjs
 ```
 

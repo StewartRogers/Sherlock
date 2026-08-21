@@ -4,6 +4,9 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 /**
  * Everything except Next's own static output goes through the gate, so a new
  * route is protected the moment it is added.
+ *
+ * Next 16 renamed this convention from `middleware` to `proxy`; it always runs
+ * on the Node.js runtime, which is why lib/auth.ts sticks to Web Crypto.
  */
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
@@ -11,7 +14,7 @@ export const config = {
 
 const PUBLIC_PATHS = new Set(["/login", "/api/login"]);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
