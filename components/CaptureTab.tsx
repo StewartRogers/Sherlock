@@ -114,16 +114,17 @@ export function CaptureTab() {
           {captured.map((p, idx) => {
             const tags = captureEmployer[idx] ?? [];
             return (
-              <div className={`sh-capcell ${idx === selIdx ? "sel" : ""}`} key={p.code}>
+              <button
+                type="button"
+                className={`sh-capcell ${idx === selIdx ? "sel" : ""}`}
+                onClick={() => selectCapture(idx)}
+                aria-label={`Edit employer tags for ${p.code}`}
+                key={p.code}
+              >
                 <div className="sh-thumb" style={{ width: "100%", height: "100%" }}>
-                  <ImageSlot label={p.code} />
+                  <ImageSlot label={p.code} variant="construction" />
                 </div>
-                <button
-                  type="button"
-                  className="sh-tagbtn"
-                  onClick={() => selectCapture(idx)}
-                  aria-label={`Edit employer tags for ${p.code}`}
-                >
+                <span className="sh-capfoot">
                   <span>{p.code}</span>
                   <span
                     style={{
@@ -134,8 +135,8 @@ export function CaptureTab() {
                   >
                     {tags.length ? String(tags.length) : "!"}
                   </span>
-                </button>
-              </div>
+                </span>
+              </button>
             );
           })}
         </div>

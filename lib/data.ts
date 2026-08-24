@@ -9,31 +9,40 @@ import type {
   ReportDoc,
 } from "./types";
 
-/** Seed report copy, cycled per employer so each has distinct starting text. */
+/**
+ * Seed report copy, cycled per employer so each has distinct starting text.
+ * Written as Sherlock's draft assessment from the tagged evidence — a
+ * starting point the inspector confirms and rewrites in WSM 360, not a
+ * finished order. Each order/reference carries the evidence codes it was
+ * drawn from, shown as thumbnails alongside the text.
+ */
 export const REPORT_DEFAULTS: ReportDoc[] = [
   {
-    note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua, ut enim ad minim veniam quis nostrud exercitation ullamco.",
+    note: "Drafted from the photos, notes, and scanned pages tagged to Rainshield Roofing. A worker was observed pressure washing shingles near the leading edge of a steep roof with no personal fall protection in use — roughly 23 feet to grade on a 4:12 pitch. The site's first aid attendant certificate is also nearing its expiry date. Review this summary, then write the Inspection Report in WSM 360 in your own words.",
+    noteEvidence: ["E-10", "E-11", "E-12", "E-13", "E-14", "REF-1"],
     orders: [
-      "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+      {
+        text: "Fall protection was not in use at the leading edge of the roof. The evidence shows a worker pressure washing shingles within reach of an unprotected edge, with no anchor point, lanyard, or guardrail visible, and no barrier preventing access to the edge. This reads as a contravention of OHS Regulation 11.2(1)(a): an employment relationship with Rainshield Roofing, work performed at a height where a fall could cause injury, and the absence of an adequate fall protection system. Confirm each condition against the evidence below, then draft the order in WSM 360 with the specific distance to grade and roof pitch.",
+        evidence: ["E-10", "E-11", "E-12", "E-13", "E-14"],
+      },
     ],
     refs: [
-      "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.",
-      "Deserunt mollit anim id est laborum, sed ut perspiciatis unde omnis iste natus.",
-      "Error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa.",
+      {
+        text: "The site's first aid attendant certificate is due to expire shortly. No order follows from this on its own, but it's worth recording as a regulation reference and following up with the site representative before the certificate lapses.",
+        evidence: ["REF-1"],
+      },
     ],
   },
   {
-    note: "Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur.",
+    note: "Drafted from the photos and notes tagged to Meridian Construction. Two workers were observed cutting and loading material at ground level with no one directing the work, and no supervisor present at the time, though a supervisor's vehicle was parked on site. Review this summary, then write the Inspection Report in WSM 360 in your own words.",
+    noteEvidence: ["—"],
     orders: [
-      "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores.",
-      "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur adipisci velit sed quia non numquam.",
+      {
+        text: "Two workers were cutting and loading material at ground level with no one directing the work. A supervisor's vehicle was on site, but no supervisor was present or visible during the walkthrough. This reads as a supervision gap rather than a specific task hazard, and may involve both Meridian Construction and Rainshield Roofing depending on whose workers were involved. Confirm the employer relationship and the supervision requirement against the evidence below, then draft the order in WSM 360.",
+        evidence: ["—"],
+      },
     ],
-    refs: [
-      "Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe.",
-      "Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit.",
-      "Omnis voluptas assumenda est, omnis dolor repellendus ut aut reiciendis voluptatibus.",
-    ],
+    refs: [],
   },
 ];
 
@@ -58,6 +67,11 @@ export const CASE_EVIDENCE: CaseEvidence[] = [
   { code: "—", label: "Ground-level cutting and loading, unsupervised", employer: null, type: "open" },
   { code: "REF-1", label: "First aid certificate — expiring soon", employer: "roofing", type: "reference" },
 ];
+
+/** Look up a case-evidence item's label by its code, for rendering thumbnails. */
+export const EVIDENCE_BY_CODE: Record<string, CaseEvidence> = Object.fromEntries(
+  CASE_EVIDENCE.map((e) => [e.code, e]),
+);
 
 export const DEFAULT_EMPLOYERS: Employer[] = [
   { id: "roofing", label: "Rainshield Roofing — sub" },

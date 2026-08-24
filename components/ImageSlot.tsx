@@ -1,11 +1,36 @@
+import { ConstructionSitePhoto, NotesPagePhoto } from "./illustrations";
+
+export type SlotVariant = "placeholder" | "construction" | "notes";
+
 /**
  * Stands in for a captured photograph or scanned page. The prototype has no
- * camera, so each slot shows the evidence code it would carry.
+ * camera, so "construction"/"notes" show an illustrative stand-in image;
+ * "placeholder" (the default, used where the exact evidence code matters
+ * more than a picture, e.g. the case folder) keeps the plain coded tile.
  */
-export function ImageSlot({ label, className = "" }: { label: string; className?: string }) {
+export function ImageSlot({
+  label,
+  variant = "placeholder",
+  className = "",
+}: {
+  label: string;
+  variant?: SlotVariant;
+  className?: string;
+}) {
+  if (variant === "placeholder") {
+    return (
+      <div className={`sh-slot halftone ${className}`} role="img" aria-label={`Placeholder for ${label}`}>
+        <span>{label}</span>
+      </div>
+    );
+  }
+
+  const Illustration = variant === "construction" ? ConstructionSitePhoto : NotesPagePhoto;
+  const description = variant === "construction" ? "Construction site photo" : "Notebook page photo";
+
   return (
-    <div className={`sh-slot halftone ${className}`} role="img" aria-label={`Placeholder for ${label}`}>
-      <span>{label}</span>
+    <div className={`sh-slot-photo ${className}`} role="img" aria-label={`${description} for ${label}`}>
+      <Illustration />
     </div>
   );
 }

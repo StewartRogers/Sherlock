@@ -296,7 +296,12 @@ function useSherlockState() {
         0,
       );
       const d = REPORT_DEFAULTS[i % REPORT_DEFAULTS.length];
-      return { note: d.note, orders: [...d.orders], refs: [...d.refs] };
+      return {
+        note: d.note,
+        noteEvidence: [...d.noteEvidence],
+        orders: d.orders.map((o) => ({ ...o, evidence: [...o.evidence] })),
+        refs: d.refs.map((r) => ({ ...r, evidence: [...r.evidence] })),
+      };
     },
     [],
   );
@@ -320,11 +325,15 @@ function useSherlockState() {
   );
   const setListItem = useCallback(
     (key: "orders" | "refs", i: number, v: string) =>
-      updateDoc((d) => ({ ...d, [key]: d[key].map((t, j) => (j === i ? v : t)) })),
+      updateDoc((d) => ({
+        ...d,
+        [key]: d[key].map((item, j) => (j === i ? { ...item, text: v } : item)),
+      })),
     [updateDoc],
   );
   const addListItem = useCallback(
-    (key: "orders" | "refs") => updateDoc((d) => ({ ...d, [key]: [...d[key], ""] })),
+    (key: "orders" | "refs") =>
+      updateDoc((d) => ({ ...d, [key]: [...d[key], { text: "", evidence: [] }] })),
     [updateDoc],
   );
   const removeListItem = useCallback(

@@ -1,23 +1,114 @@
 "use client";
 
-import { CAPTURE_PHOTOS, CASE_EVIDENCE, NEW_CASE_STAMP, TYPE_TAG } from "@/lib/data";
+import { useState } from "react";
+import { CASE_EVIDENCE, NEW_CASE_STAMP, TYPE_TAG } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
-import { ImageSlot } from "./ImageSlot";
+import type { Employer, Note } from "@/lib/types";
+import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
 
 /** Evidence carried over from earlier in the inspection, before this session. */
 const CARRIED_PHOTOS = 7;
 const CARRIED_NOTES = 4;
 
+function ChevronIcon() {
+  return (
+    <svg className="sh-collapse-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function truncateWords(text: string, n: number): { shown: string; isLong: boolean } {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= n) return { shown: text, isLong: false };
+  return { shown: words.slice(0, n).join(" ") + "…", isLong: true };
+}
+
+type SectionKey = "photos" | "notes" | "requests" | "scans";
+
+function NoteRows({
+  items,
+  caseEmployers,
+  expandedNotes,
+  onToggle,
+}: {
+  items: Note[];
+  caseEmployers: Employer[];
+  expandedNotes: Set<number>;
+  onToggle: (id: number) => void;
+}) {
+  return (
+    <div className="sh-list">
+      {items.map((n) => {
+        const isExpanded = expandedNotes.has(n.id);
+        const { shown, isLong } = truncateWords(n.text, 25);
+        const employerLabels = n.employers.length
+          ? n.employers
+              .map((id) => caseEmployers.find((ce) => ce.id === id)?.label)
+              .filter(Boolean)
+              .join(", ")
+          : "Unassigned";
+        return (
+          <div className="sh-row" key={n.id} style={{ flexDirection: "column", alignItems: "stretch", gap: 4 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+              <span className={n.kind === "request" ? "tag tag-accent-2" : "tag tag-neutral"}>{n.code}</span>
+              <div style={{ fontSize: 14, flex: 1 }}>
+                {isExpanded ? n.text : shown}
+                {isLong && (
+                  <button
+                    type="button"
+                    className="sh-linkbtn"
+                    style={{ marginLeft: 6 }}
+                    onClick={() => onToggle(n.id)}
+                  >
+                    {isExpanded ? "Less" : "More"}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="sh-row-meta">{employerLabels}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function CaseFolderTab() {
-  const { caseEmployers, captureStep, notes, primaryMap, employerForSlot, setPrimary } =
+  const { caseEmployers, captureStep, notes, scanPageCount, primaryMap, employerForSlot, setPrimary } =
     useSherlock();
+
+  const [open, setOpen] = useState<Record<SectionKey, boolean>>({
+    photos: true,
+    notes: true,
+    requests: true,
+    scans: true,
+  });
+  const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
+  const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
+
+  const noteItems = notes.filter((n) => n.kind !== "request");
+  const requestItems = notes.filter((n) => n.kind === "request");
 
   const photoCount = captureStep + CARRIED_PHOTOS;
   const noteCount = notes.length + CARRIED_NOTES;
   const openCount = CASE_EVIDENCE.filter((e) => e.type === "open").length;
 
-  /* The report's exhibit picker always shows at least the seeded five. */
-  const draftPhotos = CAPTURE_PHOTOS.slice(0, Math.max(captureStep, 5));
+  function toggleSection(key: SectionKey) {
+    setOpen((s) => ({ ...s, [key]: !s[key] }));
+  }
+
+  function toggleNoteExpanded(id: number) {
+    setExpandedNotes((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const viewingCode = viewing?.code ?? null;
+  const viewingEvidence = viewingCode ? CASE_EVIDENCE.find((e) => e.code === viewingCode) : undefined;
 
   return (
     <div>
@@ -52,76 +143,149 @@ export function CaseFolderTab() {
         </div>
       </div>
 
+      {/* — Photos — */}
       <div className="sh-section">
-        <div className="sh-kicker">Evidence</div>
-        <div className="sh-list">
-          {CASE_EVIDENCE.map((e, idx) => {
-            const employer = employerForSlot(e.employer);
-            const employerLabel = employer?.label ?? "Unassigned";
-            const employerCls = employer
-              ? `tag ${caseEmployers.indexOf(employer) === 1 ? "tag-accent-2" : "tag-accent"}`
-              : "tag tag-neutral";
-            const tt = TYPE_TAG[e.type];
-            return (
-              <div className="sh-row" key={`${e.code}-${idx}`}>
-                <div className="sh-thumb" style={{ width: 44, height: 44, flex: "none" }}>
-                  <ImageSlot label={e.code} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="sh-row-title" style={{ fontSize: 14 }}>
-                    {e.label}
-                  </div>
-                  <div style={{ display: "flex", gap: 5, marginTop: 5, flexWrap: "wrap" }}>
-                    <span className="tag tag-neutral">{e.code}</span>
-                    <span className={employerCls}>{employerLabel}</span>
-                    <span className={tt.cls}>{tt.label}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <button
+          type="button"
+          className="sh-collapse-head"
+          aria-expanded={open.photos}
+          onClick={() => toggleSection("photos")}
+        >
+          <span className="sh-kicker" style={{ margin: 0 }}>
+            Photos · {CASE_EVIDENCE.length}
+          </span>
+          <ChevronIcon />
+        </button>
+        {open.photos && (
+          <div className="sh-grid-tight">
+            {CASE_EVIDENCE.map((e) => (
+              <EvidenceThumb
+                key={e.code}
+                size={52}
+                item={{ code: e.code, label: e.label, variant: "construction" }}
+                onOpen={setViewing}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* — Scanned notes — */}
       <div className="sh-section">
-        <div className="sh-kicker">Evidence — primary / secondary</div>
-        <div className="sh-list">
-          {draftPhotos.map((p) => {
-            const primary = !!primaryMap[p.code];
-            return (
-              <div className="sh-row" key={p.code}>
-                <div className="sh-thumb" style={{ width: 40, height: 40, flex: "none" }}>
-                  <ImageSlot label={p.code} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: "var(--color-accent)" }}>{p.code}</div>
-                  <div className="sh-row-title" style={{ fontSize: 14 }}>
-                    {p.label}
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 4, flex: "none" }} role="group" aria-label={`${p.code} exhibit rank`}>
-                  <button
-                    type="button"
-                    className={`sh-pillbtn ${primary ? "active" : ""}`}
-                    aria-pressed={primary}
-                    onClick={() => setPrimary(p.code, true)}
-                  >
-                    Primary
-                  </button>
-                  <button
-                    type="button"
-                    className={`sh-pillbtn ${!primary ? "active" : ""}`}
-                    aria-pressed={!primary}
-                    onClick={() => setPrimary(p.code, false)}
-                  >
-                    Secondary
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <button
+          type="button"
+          className="sh-collapse-head"
+          aria-expanded={open.scans}
+          onClick={() => toggleSection("scans")}
+        >
+          <span className="sh-kicker" style={{ margin: 0 }}>
+            Scanned notes · {scanPageCount}
+          </span>
+          <ChevronIcon />
+        </button>
+        {open.scans &&
+          (scanPageCount === 0 ? (
+            <p className="sh-meta">No pages scanned yet.</p>
+          ) : (
+            <div className="sh-grid-tight">
+              {Array.from({ length: scanPageCount }, (_, i) => (
+                <EvidenceThumb
+                  key={i}
+                  size={52}
+                  item={{ code: `Page ${i + 1}`, label: `Scanned page ${i + 1}`, variant: "notes" }}
+                  onOpen={setViewing}
+                />
+              ))}
+            </div>
+          ))}
       </div>
+
+      {/* — Notes — */}
+      <div className="sh-section">
+        <button
+          type="button"
+          className="sh-collapse-head"
+          aria-expanded={open.notes}
+          onClick={() => toggleSection("notes")}
+        >
+          <span className="sh-kicker" style={{ margin: 0 }}>
+            Notes · {noteItems.length}
+          </span>
+          <ChevronIcon />
+        </button>
+        {open.notes &&
+          (noteItems.length === 0 ? (
+            <p className="sh-meta">No notes yet.</p>
+          ) : (
+            <NoteRows
+              items={noteItems}
+              caseEmployers={caseEmployers}
+              expandedNotes={expandedNotes}
+              onToggle={toggleNoteExpanded}
+            />
+          ))}
+      </div>
+
+      {/* — Requests — */}
+      <div className="sh-section">
+        <button
+          type="button"
+          className="sh-collapse-head"
+          aria-expanded={open.requests}
+          onClick={() => toggleSection("requests")}
+        >
+          <span className="sh-kicker" style={{ margin: 0 }}>
+            Requests · {requestItems.length}
+          </span>
+          <ChevronIcon />
+        </button>
+        {open.requests &&
+          (requestItems.length === 0 ? (
+            <p className="sh-meta">No requests yet.</p>
+          ) : (
+            <NoteRows
+              items={requestItems}
+              caseEmployers={caseEmployers}
+              expandedNotes={expandedNotes}
+              onToggle={toggleNoteExpanded}
+            />
+          ))}
+      </div>
+
+      <EvidenceViewerOverlay item={viewing} onClose={() => setViewing(null)}>
+        {viewingEvidence && (
+          <>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: "var(--space-2)" }}>
+              <span className="tag tag-neutral">
+                {employerForSlot(viewingEvidence.employer)?.label ?? "Unassigned"}
+              </span>
+              <span className={TYPE_TAG[viewingEvidence.type].cls}>{TYPE_TAG[viewingEvidence.type].label}</span>
+            </div>
+            <div
+              style={{ display: "flex", gap: 4, marginTop: "var(--space-3)" }}
+              role="group"
+              aria-label={`${viewingEvidence.code} exhibit rank`}
+            >
+              <button
+                type="button"
+                className={`sh-pillbtn ${primaryMap[viewingEvidence.code] ? "active" : ""}`}
+                aria-pressed={!!primaryMap[viewingEvidence.code]}
+                onClick={() => setPrimary(viewingEvidence.code, true)}
+              >
+                Primary
+              </button>
+              <button
+                type="button"
+                className={`sh-pillbtn ${!primaryMap[viewingEvidence.code] ? "active" : ""}`}
+                aria-pressed={!primaryMap[viewingEvidence.code]}
+                onClick={() => setPrimary(viewingEvidence.code, false)}
+              >
+                Secondary
+              </button>
+            </div>
+          </>
+        )}
+      </EvidenceViewerOverlay>
     </div>
   );
 }

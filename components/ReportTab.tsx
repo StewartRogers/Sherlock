@@ -1,6 +1,27 @@
 "use client";
 
+import { useState } from "react";
+import { EVIDENCE_BY_CODE } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
+import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
+
+/** Evidence codes are all photographic in this prototype; certificates and
+ * open items share the same construction-site stand-in image. */
+function toViewItem(code: string): EvidenceViewItem {
+  const evidence = EVIDENCE_BY_CODE[code];
+  return { code, label: evidence?.label ?? code, variant: "construction" };
+}
+
+function EvidenceRow({ codes, onOpen }: { codes: string[]; onOpen: (item: EvidenceViewItem) => void }) {
+  if (!codes.length) return null;
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+      {codes.map((code) => (
+        <EvidenceThumb key={code} item={toViewItem(code)} onOpen={onOpen} />
+      ))}
+    </div>
+  );
+}
 
 export function ReportTab() {
   const {
@@ -13,13 +34,15 @@ export function ReportTab() {
     addListItem,
     removeListItem,
   } = useSherlock();
+  const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
 
   return (
     <div>
       <h2 className="sh-title">Report content</h2>
       <p className="sh-meta">
-        One report per employer — orders, regulation references, and IR notes. Sherlock&rsquo;s
-        wording is a starting point; the words and the call are yours in WSM 360.
+        Sherlock drafted this from the photos, notes, and scanned pages tagged to each employer —
+        one report per employer, with orders and regulation references built from what you
+        captured. Review the wording and the call; both are yours to finish in WSM 360.
       </p>
 
       <div
@@ -54,13 +77,14 @@ export function ReportTab() {
             onChange={(e) => setReportNote(e.target.value)}
             placeholder="Notes for this employer"
           />
+          <EvidenceRow codes={reportDoc.noteEvidence} onOpen={setViewing} />
         </div>
       </div>
 
-      <div className="sh-cols">
-        <div className="sh-measure">
+      <div className="sh-measure">
+        <div>
           <div className="sh-kicker">Orders</div>
-          {reportDoc.orders.map((text, i) => (
+          {reportDoc.orders.map((item, i) => (
             <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`order-${i}`}>
               <div
                 style={{
@@ -84,10 +108,11 @@ export function ReportTab() {
                 id={`order-${i}`}
                 className="input"
                 rows={4}
-                value={text}
+                value={item.text}
                 onChange={(e) => setListItem("orders", i, e.target.value)}
                 placeholder="Statement of the issue"
               />
+              <EvidenceRow codes={item.evidence} onOpen={setViewing} />
             </div>
           ))}
           <button type="button" className="btn btn-secondary" onClick={() => addListItem("orders")}>
@@ -95,9 +120,9 @@ export function ReportTab() {
           </button>
         </div>
 
-        <div className="sh-measure">
+        <div style={{ marginTop: "var(--space-6)" }}>
           <div className="sh-kicker">Regulation references</div>
-          {reportDoc.refs.map((text, i) => (
+          {reportDoc.refs.map((item, i) => (
             <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
               <div
                 style={{
@@ -121,10 +146,11 @@ export function ReportTab() {
                 id={`ref-${i}`}
                 className="input"
                 rows={3}
-                value={text}
+                value={item.text}
                 onChange={(e) => setListItem("refs", i, e.target.value)}
                 placeholder="Regulation reference"
               />
+              <EvidenceRow codes={item.evidence} onOpen={setViewing} />
             </div>
           ))}
           <button type="button" className="btn btn-secondary" onClick={() => addListItem("refs")}>
@@ -132,6 +158,8 @@ export function ReportTab() {
           </button>
         </div>
       </div>
+
+      <EvidenceViewerOverlay item={viewing} onClose={() => setViewing(null)} />
     </div>
   );
 }

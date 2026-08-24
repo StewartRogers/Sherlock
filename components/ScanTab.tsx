@@ -47,7 +47,7 @@ export function ScanTab() {
             {Array.from({ length: scanPageCount }, (_, i) => (
               <div key={i} style={{ aspectRatio: "1", position: "relative" }}>
                 <div className="sh-thumb" style={{ width: "100%", height: "100%" }}>
-                  <ImageSlot label={`page ${i + 1}`} />
+                  <ImageSlot label={`page ${i + 1}`} variant="notes" />
                 </div>
                 <div
                   style={{

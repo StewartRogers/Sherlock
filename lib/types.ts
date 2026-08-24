@@ -35,10 +35,17 @@ export interface Note {
   code: string;
 }
 
+/** A drafted order or regulation reference, with the evidence codes it was drawn from. */
+export interface ReportItem {
+  text: string;
+  evidence: string[];
+}
+
 export interface ReportDoc {
   note: string;
-  orders: string[];
-  refs: string[];
+  noteEvidence: string[];
+  orders: ReportItem[];
+  refs: ReportItem[];
 }
 
 export interface RecentCase {
