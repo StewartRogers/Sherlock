@@ -72,7 +72,7 @@ export function ReportTab() {
           <textarea
             id="report-note"
             className="input"
-            rows={5}
+            rows={7}
             value={reportDoc.note}
             onChange={(e) => setReportNote(e.target.value)}
             placeholder="Notes for this employer"
@@ -107,7 +107,7 @@ export function ReportTab() {
               <textarea
                 id={`order-${i}`}
                 className="input"
-                rows={4}
+                rows={9}
                 value={item.text}
                 onChange={(e) => setListItem("orders", i, e.target.value)}
                 placeholder="Statement of the issue"
@@ -145,7 +145,7 @@ export function ReportTab() {
               <textarea
                 id={`ref-${i}`}
                 className="input"
-                rows={3}
+                rows={4}
                 value={item.text}
                 onChange={(e) => setListItem("refs", i, e.target.value)}
                 placeholder="Regulation reference"

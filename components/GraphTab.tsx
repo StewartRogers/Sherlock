@@ -96,6 +96,30 @@ function layoutNodes(nodes: GNode[], edges: GraphEdge[], width: number, height: 
       p.y = Math.min(height - n.r - 6, Math.max(n.r + 6, p.y + p.vy));
     }
   }
+
+  /* The physics settle into whatever size the repulsion/spring balance
+     produces, which is usually smaller than the canvas — rescale the
+     result to actually fill it rather than leaving it clustered in a
+     corner with dead space around it. */
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const n of nodes) {
+    const p = pos.get(n.id)!;
+    minX = Math.min(minX, p.x - n.r);
+    maxX = Math.max(maxX, p.x + n.r);
+    minY = Math.min(minY, p.y - n.r);
+    maxY = Math.max(maxY, p.y + n.r);
+  }
+  const margin = 36;
+  const scaleX = Math.min((width - margin * 2) / Math.max(maxX - minX, 1), 2.2);
+  const scaleY = Math.min((height - margin * 2) / Math.max(maxY - minY, 1), 2.2);
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+  for (const n of nodes) {
+    const p = pos.get(n.id)!;
+    p.x = cx + (p.x - midX) * scaleX;
+    p.y = cy + (p.y - midY) * scaleY;
+  }
+
   return pos;
 }
 
