@@ -53,15 +53,4 @@ export interface RecentCase {
   meta: string;
 }
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-  r: number;
-  base: string;
-  anchor: "middle" | "start";
-  ty: number;
-}
-
 export type GraphEdge = [string, string];

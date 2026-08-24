@@ -1,13 +1,4 @@
-import type {
-  CapturePhoto,
-  CaseEvidence,
-  Employer,
-  EvidenceType,
-  GraphEdge,
-  GraphNode,
-  RecentCase,
-  ReportDoc,
-} from "./types";
+import type { CapturePhoto, CaseEvidence, Employer, EvidenceType, RecentCase, ReportDoc } from "./types";
 
 /**
  * Seed report copy, cycled per employer so each has distinct starting text.
@@ -102,26 +93,6 @@ export const NEW_CASE_STAMP = {
   address: "1450 Meridian Rd, Coquitlam",
   timestamp: "Aug 18, 2026 · 9:14 a.m.",
 };
-
-export const GRAPH_NODES: GraphNode[] = [
-  { id: "case", label: "Casefile", x: 80, y: 210, r: 26, base: "var(--color-neutral-700)", anchor: "middle", ty: -36 },
-  { id: "roofing", label: "Rainshield Roofing", x: 270, y: 110, r: 22, base: "var(--color-accent-600)", anchor: "middle", ty: -32 },
-  { id: "prime", label: "Meridian Construction", x: 270, y: 330, r: 22, base: "var(--color-accent-2-600)", anchor: "middle", ty: 36 },
-  { id: "e10", label: "E-10", x: 470, y: 30, r: 14, base: "var(--color-accent-400)", anchor: "start", ty: 4 },
-  { id: "e11", label: "E-11", x: 470, y: 75, r: 14, base: "var(--color-accent-400)", anchor: "start", ty: 4 },
-  { id: "e12", label: "E-12", x: 470, y: 120, r: 14, base: "var(--color-accent-400)", anchor: "start", ty: 4 },
-  { id: "e13", label: "E-13", x: 470, y: 165, r: 14, base: "var(--color-accent-400)", anchor: "start", ty: 4 },
-  { id: "e14", label: "E-14", x: 470, y: 210, r: 14, base: "var(--color-accent-400)", anchor: "start", ty: 4 },
-  { id: "ref1", label: "REF-1", x: 470, y: 255, r: 14, base: "var(--color-neutral-500)", anchor: "start", ty: 4 },
-  { id: "open", label: "Ground-level issue", x: 470, y: 300, r: 15, base: "var(--color-neutral-400)", anchor: "start", ty: 4 },
-  { id: "req1", label: "REQ-1", x: 470, y: 355, r: 14, base: "var(--color-neutral-500)", anchor: "start", ty: 4 },
-];
-
-export const GRAPH_EDGES: GraphEdge[] = [
-  ["case", "roofing"], ["case", "prime"],
-  ["roofing", "e10"], ["roofing", "e11"], ["roofing", "e12"], ["roofing", "e13"], ["roofing", "e14"],
-  ["roofing", "ref1"], ["roofing", "open"], ["prime", "open"], ["prime", "req1"],
-];
 
 /**
  * The demo evidence and graph are authored against two positional employer

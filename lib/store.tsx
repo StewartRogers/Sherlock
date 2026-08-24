@@ -16,6 +16,7 @@ import {
 import type {
   Employer,
   EmployerSlot,
+  GraphEdge,
   Note,
   NoteKind,
   ReportDoc,
@@ -48,6 +49,10 @@ interface SherlockState {
   reportEmployer: string;
   reportDocs: Record<string, ReportDoc>;
   selectedGraphNode: string | null;
+  /** Manually added graph links, layered on top of the links Sherlock infers from tags. */
+  graphLinks: GraphEdge[];
+  /** Edge keys (see edgeKey()) the inspector has removed, including inferred ones. */
+  removedGraphLinks: string[];
 }
 
 const INITIAL: SherlockState = {
@@ -73,7 +78,14 @@ const INITIAL: SherlockState = {
   reportEmployer: "roofing",
   reportDocs: {},
   selectedGraphNode: null,
+  graphLinks: [],
+  removedGraphLinks: [],
 };
+
+/** Normalizes a pair of node ids so a link's direction doesn't matter for lookups. */
+export function edgeKey(a: string, b: string): string {
+  return [a, b].sort().join("::");
+}
 
 function useSherlockState() {
   const [state, setState] = useState<SherlockState>(INITIAL);
@@ -348,6 +360,32 @@ function useSherlockState() {
       patch((s) => ({ selectedGraphNode: s.selectedGraphNode === id ? null : id })),
     [patch],
   );
+  const addGraphLink = useCallback(
+    (a: string, b: string) =>
+      patch((s) => {
+        if (a === b) return null;
+        const key = edgeKey(a, b);
+        if (s.graphLinks.some(([x, y]) => edgeKey(x, y) === key)) return null;
+        return {
+          graphLinks: [...s.graphLinks, [a, b]],
+          removedGraphLinks: s.removedGraphLinks.filter((k) => k !== key),
+        };
+      }),
+    [patch],
+  );
+  const removeGraphLink = useCallback(
+    (a: string, b: string) =>
+      patch((s) => {
+        const key = edgeKey(a, b);
+        return {
+          graphLinks: s.graphLinks.filter(([x, y]) => edgeKey(x, y) !== key),
+          removedGraphLinks: s.removedGraphLinks.includes(key)
+            ? s.removedGraphLinks
+            : [...s.removedGraphLinks, key],
+        };
+      }),
+    [patch],
+  );
 
   const reportDoc = activeReportEmployer
     ? state.reportDocs[activeReportEmployer] ??
@@ -368,6 +406,7 @@ function useSherlockState() {
     ...state,
     activeReportEmployer,
     reportDoc,
+    defaultDoc,
     employerForSlot,
     goNewCase,
     backHome,
@@ -400,6 +439,8 @@ function useSherlockState() {
     addListItem,
     removeListItem,
     selectGraphNode,
+    addGraphLink,
+    removeGraphLink,
   };
 }
 
