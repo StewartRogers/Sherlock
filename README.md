@@ -108,9 +108,10 @@ the CLI.
 
 ## Design system
 
-**Broadsheet** — newsprint set for the web. Source Serif 4 throughout, near-black `#201e1d`
-on paper `#f3f2f2`, with process cyan `#0088b0` and magenta `#d6006c` used sparingly as spot
-color. Hierarchy comes from the type scale and whitespace rather than boxes and dividers.
+**Broadsheet** — the token layer and component classes (buttons, tags, cards, tabs) stay
+constant; only the values running through them change. Currently retuned to WorkSafeBC's
+UX stylesheet: Verdana body copy and bold Halis headings, mountainblue `#6399ae` and orange
+`#ed8b00` on warm grey `#453f39`-on-`#f1f0ef`, and WSBC's rounder corners and shadows.
 
 All tokens live at the top of `app/globals.css` as CSS custom properties — `--color-*`,
 `--font-*`, `--space-*`, `--radius-*`, `--shadow-*`. Take values from those variables rather
