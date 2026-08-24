@@ -34,11 +34,13 @@ export function NotesTab() {
   const nextReqCode = `REQ-${notes.filter((n) => n.kind === "request").length + 1}`;
 
   return (
-    <div className="sh-measure">
+    <div>
       <h2 className="sh-title">Notes</h2>
       <p className="sh-meta">Speak or type a note, and tag which employer it belongs to.</p>
 
-      <div className="sh-section field">
+      <div className="sh-cols" style={{ marginTop: "var(--space-4)" }}>
+        <div className="sh-measure">
+          <div className="sh-section field" style={{ marginTop: 0 }}>
         <label id="note-type-label">Type</label>
         <div style={{ display: "flex", gap: 6 }} role="group" aria-labelledby="note-type-label">
           <button
@@ -130,9 +132,11 @@ export function NotesTab() {
       >
         {draftNoteKind === "request" ? "Save request" : "Save note"}
       </button>
+        </div>
 
-      {notes.length > 0 && (
-        <div className="sh-section">
+        <div className="sh-measure">
+      {notes.length > 0 ? (
+        <div className="sh-section" style={{ marginTop: 0 }}>
           <div className="sh-kicker">Notes and requests captured</div>
           <div className="sh-list">
             {notes
@@ -221,7 +225,11 @@ export function NotesTab() {
               })}
           </div>
         </div>
+      ) : (
+        <p className="sh-meta">No notes or requests captured yet.</p>
       )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -43,8 +43,8 @@ export function ReportTab() {
         })}
       </div>
 
-      <div className="sh-measure">
-        <div className="field" style={{ marginBottom: "var(--space-6)" }}>
+      <div className="sh-measure" style={{ marginBottom: "var(--space-6)" }}>
+        <div className="field">
           <label htmlFor="report-note">Inspection note</label>
           <textarea
             id="report-note"
@@ -55,81 +55,82 @@ export function ReportTab() {
             placeholder="Notes for this employer"
           />
         </div>
+      </div>
 
-        <div className="sh-kicker">Orders</div>
-        {reportDoc.orders.map((text, i) => (
-          <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`order-${i}`}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                justifyContent: "space-between",
-                gap: "var(--space-3)",
-              }}
-            >
-              <label htmlFor={`order-${i}`}>Order {i + 1}</label>
-              <button
-                type="button"
-                className="sh-pillbtn"
-                onClick={() => removeListItem("orders", i)}
-                aria-label={`Remove order ${i + 1}`}
+      <div className="sh-cols">
+        <div className="sh-measure">
+          <div className="sh-kicker">Orders</div>
+          {reportDoc.orders.map((text, i) => (
+            <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`order-${i}`}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  gap: "var(--space-3)",
+                }}
               >
-                Remove
-              </button>
+                <label htmlFor={`order-${i}`}>Order {i + 1}</label>
+                <button
+                  type="button"
+                  className="sh-pillbtn"
+                  onClick={() => removeListItem("orders", i)}
+                  aria-label={`Remove order ${i + 1}`}
+                >
+                  Remove
+                </button>
+              </div>
+              <textarea
+                id={`order-${i}`}
+                className="input"
+                rows={4}
+                value={text}
+                onChange={(e) => setListItem("orders", i, e.target.value)}
+                placeholder="Statement of the issue"
+              />
             </div>
-            <textarea
-              id={`order-${i}`}
-              className="input"
-              rows={4}
-              value={text}
-              onChange={(e) => setListItem("orders", i, e.target.value)}
-              placeholder="Statement of the issue"
-            />
-          </div>
-        ))}
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => addListItem("orders")}
-          style={{ marginBottom: "var(--space-6)" }}
-        >
-          Add order
-        </button>
+          ))}
+          <button type="button" className="btn btn-secondary" onClick={() => addListItem("orders")}>
+            Add order
+          </button>
+        </div>
 
-        <div className="sh-kicker">Regulation references</div>
-        {reportDoc.refs.map((text, i) => (
-          <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                justifyContent: "space-between",
-                gap: "var(--space-3)",
-              }}
-            >
-              <label htmlFor={`ref-${i}`}>Reference {i + 1}</label>
-              <button
-                type="button"
-                className="sh-pillbtn"
-                onClick={() => removeListItem("refs", i)}
-                aria-label={`Remove reference ${i + 1}`}
+        <div className="sh-measure">
+          <div className="sh-kicker">Regulation references</div>
+          {reportDoc.refs.map((text, i) => (
+            <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  gap: "var(--space-3)",
+                }}
               >
-                Remove
-              </button>
+                <label htmlFor={`ref-${i}`}>Reference {i + 1}</label>
+                <button
+                  type="button"
+                  className="sh-pillbtn"
+                  onClick={() => removeListItem("refs", i)}
+                  aria-label={`Remove reference ${i + 1}`}
+                >
+                  Remove
+                </button>
+              </div>
+              <textarea
+                id={`ref-${i}`}
+                className="input"
+                rows={3}
+                value={text}
+                onChange={(e) => setListItem("refs", i, e.target.value)}
+                placeholder="Regulation reference"
+              />
             </div>
-            <textarea
-              id={`ref-${i}`}
-              className="input"
-              rows={3}
-              value={text}
-              onChange={(e) => setListItem("refs", i, e.target.value)}
-              placeholder="Regulation reference"
-            />
-          </div>
-        ))}
-        <button type="button" className="btn btn-secondary" onClick={() => addListItem("refs")}>
-          Add regulation reference
-        </button>
+          ))}
+          <button type="button" className="btn btn-secondary" onClick={() => addListItem("refs")}>
+            Add regulation reference
+          </button>
+        </div>
       </div>
     </div>
   );
