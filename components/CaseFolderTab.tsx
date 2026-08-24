@@ -75,7 +75,7 @@ function NoteRows({
 }
 
 export function CaseFolderTab() {
-  const { caseEmployers, captureStep, notes, scanPageCount, primaryMap, employerForSlot, setPrimary } =
+  const { caseEmployers, captureStep, notes, scanPages, primaryMap, employerForSlot, setPrimary } =
     useSherlock();
 
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({
@@ -157,14 +157,26 @@ export function CaseFolderTab() {
           <ChevronIcon />
         </button>
         {open.photos && (
-          <div className="sh-grid-tight">
+          <div className="sh-list">
             {CASE_EVIDENCE.map((e) => (
-              <EvidenceThumb
-                key={e.code}
-                size={52}
-                item={{ code: e.code, label: e.label, variant: "construction" }}
-                onOpen={setViewing}
-              />
+              <div className="sh-row" style={{ alignItems: "flex-start", gap: "var(--space-3)" }} key={e.code}>
+                <EvidenceThumb
+                  size={80}
+                  item={{ code: e.code, label: e.label, variant: "construction", meta: e.description }}
+                  onOpen={setViewing}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+                    <span className="tag tag-neutral">{e.code}</span>
+                    <span className="sh-row-title" style={{ fontSize: 14 }}>
+                      {e.label}
+                    </span>
+                  </div>
+                  <p className="sh-meta" style={{ fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                    {e.description}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -179,22 +191,31 @@ export function CaseFolderTab() {
           onClick={() => toggleSection("scans")}
         >
           <span className="sh-kicker" style={{ margin: 0 }}>
-            Scanned notes · {scanPageCount}
+            Scanned notes · {scanPages.length}
           </span>
           <ChevronIcon />
         </button>
         {open.scans &&
-          (scanPageCount === 0 ? (
+          (scanPages.length === 0 ? (
             <p className="sh-meta">No pages scanned yet.</p>
           ) : (
-            <div className="sh-grid-tight">
-              {Array.from({ length: scanPageCount }, (_, i) => (
-                <EvidenceThumb
-                  key={i}
-                  size={52}
-                  item={{ code: `Page ${i + 1}`, label: `Scanned page ${i + 1}`, variant: "notes" }}
-                  onOpen={setViewing}
-                />
+            <div className="sh-list">
+              {scanPages.map((page) => (
+                <div className="sh-row" style={{ alignItems: "flex-start", gap: "var(--space-3)" }} key={page.id}>
+                  <EvidenceThumb
+                    size={80}
+                    item={{ code: `Page ${page.id}`, label: `Scanned page ${page.id}`, variant: "notes", meta: page.text }}
+                    onOpen={setViewing}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="sh-row-title" style={{ fontSize: 14, marginBottom: 4 }}>
+                      Page {page.id}
+                    </div>
+                    <p className="sh-meta" style={{ fontSize: 13, lineHeight: 1.5, margin: 0, whiteSpace: "pre-wrap" }}>
+                      {page.text}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           ))}

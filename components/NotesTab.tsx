@@ -38,8 +38,7 @@ export function NotesTab() {
       <h2 className="sh-title">Notes</h2>
       <p className="sh-meta">Speak or type a note, and tag which employer it belongs to.</p>
 
-      <div className="sh-cols" style={{ marginTop: "var(--space-4)" }}>
-        <div className="sh-measure">
+      <div className="sh-measure" style={{ marginTop: "var(--space-4)" }}>
           <div className="sh-section field" style={{ marginTop: 0 }}>
         <label id="note-type-label">Type</label>
         <div style={{ display: "flex", gap: 6 }} role="group" aria-labelledby="note-type-label">
@@ -132,9 +131,7 @@ export function NotesTab() {
       >
         {draftNoteKind === "request" ? "Save request" : "Save note"}
       </button>
-        </div>
 
-        <div className="sh-measure">
       {notes.length > 0 ? (
         <div className="sh-section" style={{ marginTop: 0 }}>
           <div className="sh-kicker">Notes and requests captured</div>
@@ -228,7 +225,6 @@ export function NotesTab() {
       ) : (
         <p className="sh-meta">No notes or requests captured yet.</p>
       )}
-        </div>
       </div>
     </div>
   );

@@ -127,7 +127,7 @@ export function GraphTab() {
   const {
     caseEmployers,
     notes,
-    scanPageCount,
+    scanPages,
     reportDocs,
     defaultDoc,
     employerForSlot,
@@ -146,9 +146,17 @@ export function GraphTab() {
   const nodes = useMemo<GNode[]>(() => {
     const list: GNode[] = [{ id: "case", label: "Casefile", kind: "case", r: 20 }];
     for (const ce of caseEmployers) list.push({ id: ce.id, label: ce.label, kind: "employer", r: 16 });
-    for (const e of CASE_EVIDENCE) list.push({ id: e.code, label: e.code, detail: e.label, kind: "evidence", r: 11 });
-    for (let i = 0; i < scanPageCount; i++) {
-      list.push({ id: `scan-${i + 1}`, label: `Scanned page ${i + 1}`, kind: "scan", r: 9 });
+    for (const e of CASE_EVIDENCE) {
+      list.push({
+        id: e.code,
+        label: e.code === "—" ? "Open item" : e.code,
+        detail: e.label,
+        kind: "evidence",
+        r: 11,
+      });
+    }
+    for (const page of scanPages) {
+      list.push({ id: `scan-${page.id}`, label: `Page ${page.id}`, kind: "scan", r: 9 });
     }
     for (const n of notes) {
       list.push({ id: `note-${n.id}`, label: n.code, kind: n.kind === "request" ? "request" : "note", r: 9 });
@@ -163,7 +171,7 @@ export function GraphTab() {
       );
     }
     return list;
-  }, [caseEmployers, notes, scanPageCount, reportDocs, defaultDoc]);
+  }, [caseEmployers, notes, scanPages, reportDocs, defaultDoc]);
 
   const labelById = useMemo(() => new Map(nodes.map((n) => [n.id, n.label])), [nodes]);
   const detailById = useMemo(() => new Map(nodes.map((n) => [n.id, n.detail ?? n.label])), [nodes]);

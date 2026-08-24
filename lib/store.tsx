@@ -13,6 +13,7 @@ import {
   EMPLOYER_SLOTS,
   REPORT_DEFAULTS,
 } from "./data";
+import { SAMPLE_SCAN_TEXT } from "./data";
 import type {
   Employer,
   EmployerSlot,
@@ -20,6 +21,7 @@ import type {
   Note,
   NoteKind,
   ReportDoc,
+  ScanPage,
   Screen,
   Tab,
 } from "./types";
@@ -35,15 +37,13 @@ interface SherlockState {
   nudgeDismissed: boolean;
   /** Photo index -> employer ids tagged on that photo. */
   captureEmployer: Record<number, string[]>;
-  selectedCapture: number | null;
   recording: boolean;
   transcript: string;
   notes: Note[];
   draftNoteEmployers: string[];
   draftNoteKind: NoteKind;
   editingNoteId: number | null;
-  scanPageCount: number;
-  scanNotes: string;
+  scanPages: ScanPage[];
   /** Evidence code -> included in the report as a primary exhibit. */
   primaryMap: Record<string, boolean>;
   reportEmployer: string;
@@ -65,15 +65,13 @@ const INITIAL: SherlockState = {
   captureStep: 0,
   nudgeDismissed: false,
   captureEmployer: {},
-  selectedCapture: null,
   recording: false,
   transcript: "",
   notes: [],
   draftNoteEmployers: [],
   draftNoteKind: "note",
   editingNoteId: null,
-  scanPageCount: 0,
-  scanNotes: "",
+  scanPages: [],
   primaryMap: { "E-10": true, "E-11": true },
   reportEmployer: "roofing",
   reportDocs: {},
@@ -151,7 +149,6 @@ function useSherlockState() {
           caseEmployers: employers,
           captureEmployer: {},
           captureStep: 0,
-          selectedCapture: null,
           reportEmployer: employers[0].id,
           reportDocs: {},
           notes: [],
@@ -163,18 +160,10 @@ function useSherlockState() {
 
   /* — capture — */
   const shutter = useCallback(
-    () =>
-      patch((s) => {
-        const step = Math.min(s.captureStep + 1, CAPTURE_PHOTOS.length);
-        return { captureStep: step, selectedCapture: step - 1 };
-      }),
+    () => patch((s) => ({ captureStep: Math.min(s.captureStep + 1, CAPTURE_PHOTOS.length) })),
     [patch],
   );
   const dismissNudge = useCallback(() => patch(() => ({ nudgeDismissed: true })), [patch]);
-  const selectCapture = useCallback(
-    (selectedCapture: number) => patch(() => ({ selectedCapture })),
-    [patch],
-  );
   const toggleCaptureEmployer = useCallback(
     (index: number, id: string) =>
       patch((s) => {
@@ -184,11 +173,12 @@ function useSherlockState() {
       }),
     [patch],
   );
+  /** Copies the most recently captured photo's tags onto every still-untagged photo. */
   const applyTagsToUntagged = useCallback(
     () =>
       patch((s) => {
-        const sel = s.selectedCapture ?? s.captureStep - 1;
-        const tags = s.captureEmployer[sel] ?? [];
+        const last = s.captureStep - 1;
+        const tags = s.captureEmployer[last] ?? [];
         if (!tags.length) return null;
         const next = { ...s.captureEmployer };
         for (let i = 0; i < s.captureStep; i++) {
@@ -280,10 +270,19 @@ function useSherlockState() {
 
   /* — scan — */
   const scanPage = useCallback(
-    () => patch((s) => ({ scanPageCount: s.scanPageCount + 1 })),
+    () =>
+      patch((s) => {
+        const id = s.scanPages.length + 1;
+        const text = SAMPLE_SCAN_TEXT[(id - 1) % SAMPLE_SCAN_TEXT.length];
+        return { scanPages: [...s.scanPages, { id, text }] };
+      }),
     [patch],
   );
-  const setScanNotes = useCallback((scanNotes: string) => patch(() => ({ scanNotes })), [patch]);
+  const setScanPageText = useCallback(
+    (id: number, text: string) =>
+      patch((s) => ({ scanPages: s.scanPages.map((p) => (p.id === id ? { ...p, text } : p)) })),
+    [patch],
+  );
 
   /* — report — */
   const setPrimary = useCallback(
@@ -346,11 +345,6 @@ function useSherlockState() {
   const addListItem = useCallback(
     (key: "orders" | "refs") =>
       updateDoc((d) => ({ ...d, [key]: [...d[key], { text: "", evidence: [] }] })),
-    [updateDoc],
-  );
-  const removeListItem = useCallback(
-    (key: "orders" | "refs", i: number) =>
-      updateDoc((d) => ({ ...d, [key]: d[key].filter((_, j) => j !== i) })),
     [updateDoc],
   );
 
@@ -419,7 +413,6 @@ function useSherlockState() {
     startInspection,
     shutter,
     dismissNudge,
-    selectCapture,
     toggleCaptureEmployer,
     applyTagsToUntagged,
     toggleRecord,
@@ -431,13 +424,12 @@ function useSherlockState() {
     toggleNoteEmployer,
     setNoteKind,
     scanPage,
-    setScanNotes,
+    setScanPageText,
     setPrimary,
     setReportEmployer,
     setReportNote,
     setListItem,
     addListItem,
-    removeListItem,
     selectGraphNode,
     addGraphLink,
     removeGraphLink,

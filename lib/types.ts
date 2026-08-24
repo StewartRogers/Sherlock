@@ -14,14 +14,24 @@ export interface Employer {
 export interface CapturePhoto {
   code: string;
   label: string;
+  /** The longer caption Sherlock would draft from the photo itself. */
+  description: string;
 }
 
 export interface CaseEvidence {
   code: string;
   label: string;
+  /** The longer caption Sherlock would draft from the photo itself. */
+  description: string;
   /** Slot key into the case's employer list, or null when unassigned. */
   employer: EmployerSlot | null;
   type: EvidenceType;
+}
+
+export interface ScanPage {
+  id: number;
+  /** Extracted text from the page — editable, since a scan isn't always perfect. */
+  text: string;
 }
 
 /** The demo evidence is authored against two positional employer slots. */

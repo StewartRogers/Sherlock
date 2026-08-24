@@ -32,7 +32,6 @@ export function ReportTab() {
     setReportNote,
     setListItem,
     addListItem,
-    removeListItem,
   } = useSherlock();
   const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
 
@@ -86,24 +85,7 @@ export function ReportTab() {
           <div className="sh-kicker">Orders</div>
           {reportDoc.orders.map((item, i) => (
             <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`order-${i}`}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  justifyContent: "space-between",
-                  gap: "var(--space-3)",
-                }}
-              >
-                <label htmlFor={`order-${i}`}>Order {i + 1}</label>
-                <button
-                  type="button"
-                  className="sh-pillbtn"
-                  onClick={() => removeListItem("orders", i)}
-                  aria-label={`Remove order ${i + 1}`}
-                >
-                  Remove
-                </button>
-              </div>
+              <label htmlFor={`order-${i}`}>Order {i + 1}</label>
               <textarea
                 id={`order-${i}`}
                 className="input"
@@ -124,24 +106,7 @@ export function ReportTab() {
           <div className="sh-kicker">Regulation references</div>
           {reportDoc.refs.map((item, i) => (
             <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  justifyContent: "space-between",
-                  gap: "var(--space-3)",
-                }}
-              >
-                <label htmlFor={`ref-${i}`}>Reference {i + 1}</label>
-                <button
-                  type="button"
-                  className="sh-pillbtn"
-                  onClick={() => removeListItem("refs", i)}
-                  aria-label={`Remove reference ${i + 1}`}
-                >
-                  Remove
-                </button>
-              </div>
+              <label htmlFor={`ref-${i}`}>Reference {i + 1}</label>
               <textarea
                 id={`ref-${i}`}
                 className="input"

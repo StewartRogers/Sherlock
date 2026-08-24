@@ -288,7 +288,6 @@ textarea.input { min-height: 90px; resize: vertical; }
 .sh-wide { display: none; }
 .sh-pad { padding: var(--space-4) var(--space-4) var(--space-6); }
 .sh-measure { max-width: 100%; }
-.sh-grid { display: grid; grid-template-columns: repeat(auto-fill, 64px); gap: 8px; justify-content: start; }
 .sh-viewer { aspect-ratio: 4/3; }
 .sh-cols { display: grid; gap: var(--space-4); }
 
@@ -300,7 +299,6 @@ textarea.input { min-height: 90px; resize: vertical; }
   .sh-tab-label { font-size: 13px; }
   .sh-wide { display: flex; }
   .sh-narrow { display: none; }
-  .sh-grid { grid-template-columns: repeat(auto-fill, 78px); }
   .sh-viewer { aspect-ratio: 16/7; }
   .sh-cols { grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: start; }
   .sh-stats { gap: var(--space-6); }
@@ -367,6 +365,3 @@ textarea.input { min-height: 90px; resize: vertical; }
   color: var(--color-accent); cursor: pointer;
 }
 .sh-linkbtn:hover { text-decoration: underline; }
-
-/* Dense evidence grid — fits many more thumbnails per row than .sh-grid. */
-.sh-grid-tight { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }

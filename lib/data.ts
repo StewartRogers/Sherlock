@@ -1,4 +1,30 @@
-import type { CapturePhoto, CaseEvidence, Employer, EvidenceType, RecentCase, ReportDoc } from "./types";
+import type {
+  CapturePhoto,
+  CaseEvidence,
+  Employer,
+  EvidenceType,
+  RecentCase,
+  ReportDoc,
+} from "./types";
+
+const DESC = {
+  e10: "A steep residential roof photographed from ground level, showing the unguarded leading edge running the width of the structure. No perimeter guardrail, warning line, or safety net is visible along this edge. The drop to grade below appears substantial, consistent with a two-storey building, and the ground surface is hard-packed dirt with construction debris rather than any protective surface. No anchor points, temporary railings, or catch platforms are visible anywhere along this section of roof. This condition presents a clear fall hazard for any worker operating at or near this edge without a personal fall arrest system or equivalent guardrail protection in place.",
+  e11: "Close-up view of the roof surface showing asphalt shingles on a moderate slope, estimated at approximately a 4:12 pitch. The surface appears damp in sections, likely from the pressure washing observed nearby, which would further reduce traction for anyone standing or walking on it. No slip-resistant footwear, roof brackets, or toe boards are visible in the frame. A pitch of this steepness combined with a wet surface meaningfully increases the likelihood of a slip leading to a fall, particularly in the absence of any fall restraint or arrest equipment. This photo is best used to support the roof-pitch detail required for a fall-protection order.",
+  e12: "Wide shot of the roof structure showing the ridge line and surrounding surface where a fall-protection anchor point would typically be installed. No permanent or temporary anchor points, lifelines, or tie-off locations are visible anywhere in this section of roof. Without an engineered anchor, any personal fall arrest system worn by a worker would have nowhere compliant to connect, rendering a harness alone ineffective. This gap is a key piece of evidence for the missing fall-protection-system element of the order, since it shows not just that protection wasn't worn, but that the roof was not equipped to support it even if it had been.",
+  e13: "A worker is visible near the leading edge of the roof, oriented toward the edge with both hands occupied by equipment rather than any fall-arrest connection. No harness, lanyard, or visible fall-protection hardware is worn. The worker's stance places their center of gravity close to the unguarded drop, with no guardrail or physical barrier between them and the edge. This image directly supports the employment-relationship and work-at-height conditions of the fall-protection order, showing a worker actively performing tasks in a position where a fall to grade would be reasonably likely without intervention.",
+  e14: "A worker is shown actively operating a pressure washer against the roof shingles, positioned within a few feet of the unprotected leading edge. Water spray and hose management appear to be affecting footing, and no harness, anchor line, or guardrail is present in the frame. The task itself, pressure washing a sloped and now-wetted surface at height, compounds the fall risk already present from the missing edge protection. This is the primary photo supporting the fall-protection order: it shows the specific work being performed, the height involved, and the complete absence of any personal or collective fall-protection measure at the moment of exposure.",
+  ground: "Two workers are visible at ground level operating a cutting tool and loading cut material onto a nearby cart, with no third person present to direct or supervise the task. A vehicle consistent with a site supervisor's truck is parked nearby, but no one matching a supervisory role is visible anywhere in the frame. Neither worker appears to be wearing hearing or eye protection appropriate to the cutting operation being performed. The combination of an unsupervised cutting task and a supervisor's vehicle present but unoccupied suggests a possible gap in on-site supervision rather than a single momentary lapse, worth following up with the site representative.",
+  firstAid: "A wall-mounted certificate for the site's designated first aid attendant, posted in what appears to be a site office or lunchroom area. The certificate's expiry date is legible and falls within the coming weeks, meaning the qualification will lapse if not renewed before that date. No renewal or replacement certificate is posted alongside it. While the attendant is currently qualified, the approaching expiry is worth flagging to the site representative now so the certification can be renewed before it lapses, avoiding a period where the site would be without a certified first aid attendant.",
+  e17: "A general view of the site's access point and material staging area, showing the route workers and vehicles use to enter the active work zone. Stacked lumber, a dumpster, and assorted equipment are visible along the edge of the path, narrowing the usable width in places. No signage indicating an active roofing operation overhead is visible at this access point, and no delineation separates pedestrian access from the area beneath the roof's leading edge. This photo provides useful site-context evidence, showing how workers and visitors move through the site relative to the overhead work observed elsewhere in this casefile.",
+};
+
+/** Sample text Sherlock's scanner would lift from a notebook page — cycled as pages are scanned. */
+export const SAMPLE_SCAN_TEXT: string[] = [
+  "E-14 — worker pressure washing shingles, no harness. Approx 23 ft to grade, 4:12 pitch estimated by eye. Told rep this needs fall protection today, not after.",
+  "Ground level — 2 workers cutting + loading, no one directing them. Supervisor's truck in lot but no supervisor seen. Need to figure out who this belongs to.",
+  "REF-1 — first aid cert on wall expires in 3 wks. Reminded rep to renew before it lapses. Not an order, just a reference.",
+  "REQ-1 — training records not on site today. Asked rep to email them over. Following up if not received in a few days.",
+];
 
 /**
  * Seed report copy, cycled per employer so each has distinct starting text.
@@ -39,24 +65,42 @@ export const REPORT_DEFAULTS: ReportDoc[] = [
 
 /** The shots the shutter walks through, in order. */
 export const CAPTURE_PHOTOS: CapturePhoto[] = [
-  { code: "E-10", label: "Leading edge — drop to grade" },
-  { code: "E-11", label: "Roof slope, 4:12 pitch" },
-  { code: "E-12", label: "Anchor points" },
-  { code: "E-13", label: "Worker at leading edge" },
-  { code: "E-14", label: "Pressure washing, no fall protection" },
-  { code: "E-15", label: "Ground-level cutting and loading" },
-  { code: "E-16", label: "First aid attendant certificate" },
-  { code: "E-17", label: "Site access and staging area" },
+  { code: "E-10", label: "Leading edge — drop to grade", description: DESC.e10 },
+  { code: "E-11", label: "Roof slope, 4:12 pitch", description: DESC.e11 },
+  { code: "E-12", label: "Anchor points", description: DESC.e12 },
+  { code: "E-13", label: "Worker at leading edge", description: DESC.e13 },
+  { code: "E-14", label: "Pressure washing, no fall protection", description: DESC.e14 },
+  { code: "E-15", label: "Ground-level cutting and loading", description: DESC.ground },
+  { code: "E-16", label: "First aid attendant certificate", description: DESC.firstAid },
+  { code: "E-17", label: "Site access and staging area", description: DESC.e17 },
 ];
 
 export const CASE_EVIDENCE: CaseEvidence[] = [
-  { code: "E-10", label: "Leading edge — drop to grade", employer: "roofing", type: "order" },
-  { code: "E-11", label: "Roof slope, 4:12 pitch", employer: "roofing", type: "order" },
-  { code: "E-12", label: "Anchor points", employer: "roofing", type: "order" },
-  { code: "E-13", label: "Worker at leading edge", employer: "roofing", type: "order" },
-  { code: "E-14", label: "Pressure washing, no fall protection", employer: "roofing", type: "order" },
-  { code: "—", label: "Ground-level cutting and loading, unsupervised", employer: null, type: "open" },
-  { code: "REF-1", label: "First aid certificate — expiring soon", employer: "roofing", type: "reference" },
+  { code: "E-10", label: "Leading edge — drop to grade", description: DESC.e10, employer: "roofing", type: "order" },
+  { code: "E-11", label: "Roof slope, 4:12 pitch", description: DESC.e11, employer: "roofing", type: "order" },
+  { code: "E-12", label: "Anchor points", description: DESC.e12, employer: "roofing", type: "order" },
+  { code: "E-13", label: "Worker at leading edge", description: DESC.e13, employer: "roofing", type: "order" },
+  {
+    code: "E-14",
+    label: "Pressure washing, no fall protection",
+    description: DESC.e14,
+    employer: "roofing",
+    type: "order",
+  },
+  {
+    code: "—",
+    label: "Ground-level cutting and loading, unsupervised",
+    description: DESC.ground,
+    employer: null,
+    type: "open",
+  },
+  {
+    code: "REF-1",
+    label: "First aid certificate — expiring soon",
+    description: DESC.firstAid,
+    employer: "roofing",
+    type: "reference",
+  },
 ];
 
 /** Look up a case-evidence item's label by its code, for rendering thumbnails. */
