@@ -12,6 +12,7 @@ import {
   DEFAULT_EMPLOYERS,
   EMPLOYER_SLOTS,
   NEW_CASE_STAMP,
+  RECENT_CASES,
   REPORT_DEFAULTS,
 } from "./data";
 import { SAMPLE_SCAN_TEXT } from "./data";
@@ -21,6 +22,7 @@ import type {
   GraphEdge,
   Note,
   NoteKind,
+  RecentCase,
   ReportDoc,
   ScanPage,
   Screen,
@@ -31,6 +33,9 @@ import type {
 interface SherlockState {
   screen: Screen;
   visibleCases: number;
+  recentCases: RecentCase[];
+  /** The recent-case entry, if any, that's the live casefile currently in memory. */
+  activeCaseId: string | null;
   tab: Tab;
   caseEmployers: Employer[];
   caseAddress: string;
@@ -62,6 +67,8 @@ interface SherlockState {
 const INITIAL: SherlockState = {
   screen: "home",
   visibleCases: 5,
+  recentCases: RECENT_CASES,
+  activeCaseId: null,
   tab: "capture",
   caseEmployers: DEFAULT_EMPLOYERS,
   caseAddress: NEW_CASE_STAMP.address,
@@ -78,7 +85,7 @@ const INITIAL: SherlockState = {
   editingNoteId: null,
   scanPages: [],
   documents: [],
-  primaryMap: { "E-10": true, "E-11": true },
+  primaryMap: { "E-1": true, "E-2": true },
   reportEmployer: "roofing",
   reportDocs: {},
   selectedGraphNode: null,
@@ -112,13 +119,15 @@ function useSherlockState() {
   );
   const setTab = useCallback((tab: Tab) => patch(() => ({ tab })), [patch]);
 
+  /** Cards for casefiles started this session resume the live in-memory data;
+      the static demo cards still just open the canned Meridian Townhomes case. */
   const openCase = useCallback(
-    () =>
-      patch(() => ({
-        screen: "app",
-        tab: "capture",
-        caseEmployers: DEFAULT_EMPLOYERS,
-      })),
+    (id: string) =>
+      patch((s) =>
+        id === s.activeCaseId
+          ? { screen: "app", tab: "capture" }
+          : { screen: "app", tab: "capture", caseEmployers: DEFAULT_EMPLOYERS },
+      ),
     [patch],
   );
 
@@ -158,11 +167,20 @@ function useSherlockState() {
         const employers: Employer[] = names.length
           ? names.map((label, i) => ({ id: `emp${i}`, label }))
           : DEFAULT_EMPLOYERS;
+        const address = s.newCaseAddress.trim() || NEW_CASE_STAMP.address;
+        const caseId = `case-${Date.now()}`;
+        const entry: RecentCase = {
+          id: caseId,
+          name: employers[0].label,
+          meta: `${address} · ${NEW_CASE_STAMP.timestamp.split(" · ")[0]}`,
+        };
         return {
           screen: "app",
           tab: "capture",
+          recentCases: [entry, ...s.recentCases],
+          activeCaseId: caseId,
           caseEmployers: employers,
-          caseAddress: s.newCaseAddress.trim() || NEW_CASE_STAMP.address,
+          caseAddress: address,
           newCaseEmployers: [],
           newEmployerText: "",
           newCaseAddress: "",
@@ -304,8 +322,10 @@ function useSherlockState() {
     (files: File[]) =>
       patch((s) => {
         if (!files.length) return null;
+        const start = s.documents.length;
         const added: UploadedDocument[] = files.map((f, i) => ({
           id: Date.now() + i,
+          code: `D-${start + i + 1}`,
           name: f.name,
           size: f.size,
           employers: [],
@@ -394,8 +414,25 @@ function useSherlockState() {
     [updateDoc],
   );
   const addOrder = useCallback(
-    () => updateDoc((d) => ({ ...d, orders: [...d.orders, { text: "", evidence: [] }] })),
-    [updateDoc],
+    () =>
+      patch((s) => {
+        const emp = s.caseEmployers.some((c) => c.id === s.reportEmployer)
+          ? s.reportEmployer
+          : s.caseEmployers[0]?.id;
+        if (!emp) return null;
+        const total = s.caseEmployers.reduce(
+          (sum, ce) => sum + (s.reportDocs[ce.id] ?? defaultDoc(ce.id, s.caseEmployers)).orders.length,
+          0,
+        );
+        const cur = s.reportDocs[emp] ?? defaultDoc(emp, s.caseEmployers);
+        return {
+          reportDocs: {
+            ...s.reportDocs,
+            [emp]: { ...cur, orders: [...cur.orders, { code: `ORD-${total + 1}`, text: "", evidence: [] }] },
+          },
+        };
+      }),
+    [patch, defaultDoc],
   );
   const setRefField = useCallback(
     (i: number, field: "reference" | "details", v: string) =>
@@ -407,8 +444,27 @@ function useSherlockState() {
   );
   const addRef = useCallback(
     () =>
-      updateDoc((d) => ({ ...d, refs: [...d.refs, { reference: "", details: "", evidence: [] }] })),
-    [updateDoc],
+      patch((s) => {
+        const emp = s.caseEmployers.some((c) => c.id === s.reportEmployer)
+          ? s.reportEmployer
+          : s.caseEmployers[0]?.id;
+        if (!emp) return null;
+        const total = s.caseEmployers.reduce(
+          (sum, ce) => sum + (s.reportDocs[ce.id] ?? defaultDoc(ce.id, s.caseEmployers)).refs.length,
+          0,
+        );
+        const cur = s.reportDocs[emp] ?? defaultDoc(emp, s.caseEmployers);
+        return {
+          reportDocs: {
+            ...s.reportDocs,
+            [emp]: {
+              ...cur,
+              refs: [...cur.refs, { code: `RR-${total + 1}`, reference: "", details: "", evidence: [] }],
+            },
+          },
+        };
+      }),
+    [patch, defaultDoc],
   );
 
   /* — graph — */

@@ -7,7 +7,6 @@ import type { GraphEdge } from "@/lib/types";
 import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
 
 type NodeKind =
-  | "case"
   | "employer"
   | "evidence"
   | "order"
@@ -41,7 +40,6 @@ interface GNode {
  * that isn't linked to any employer is never mistaken for a category.
  */
 const KIND_COLOR: Record<NodeKind, string> = {
-  case: "var(--color-neutral-700)",
   employer: "#2a78d6",
   evidence: "#1baf7a",
   order: "#eb6834",
@@ -67,7 +65,6 @@ const LEGEND_KINDS: NodeKind[] = [
 ];
 
 const KIND_LABEL: Record<NodeKind, string> = {
-  case: "Casefile",
   employer: "Employer",
   evidence: "Evidence",
   order: "Order",
@@ -163,13 +160,6 @@ function layoutNodes(nodes: GNode[], edges: GraphEdge[], width: number, height: 
   return pos;
 }
 
-/** A short, real label for evidence that hasn't been assigned an exhibit code yet. */
-function shortLabel(text: string, maxWords = 5): string {
-  const clause = text.split(",")[0].trim();
-  const words = clause.split(/\s+/);
-  return words.length <= maxWords ? clause : words.slice(0, maxWords).join(" ") + "…";
-}
-
 export function GraphTab() {
   const {
     caseEmployers,
@@ -194,12 +184,12 @@ export function GraphTab() {
   const height = 420;
 
   const nodes = useMemo<GNode[]>(() => {
-    const list: GNode[] = [{ id: "case", label: "Casefile", kind: "case", r: 20 }];
+    const list: GNode[] = [];
     for (const ce of caseEmployers) list.push({ id: ce.id, label: ce.label, kind: "employer", r: 16 });
     for (const e of CASE_EVIDENCE) {
       list.push({
         id: e.code,
-        label: e.code === "—" ? shortLabel(e.label) : e.code,
+        label: e.code,
         title: e.label,
         body: e.description,
         thumb: { code: e.code, label: e.label, variant: "construction", meta: e.description },
@@ -210,10 +200,10 @@ export function GraphTab() {
     for (const page of scanPages) {
       list.push({
         id: `scan-${page.id}`,
-        label: `Page ${page.id}`,
-        title: `Scanned page ${page.id}`,
+        label: `SN-${page.id}`,
+        title: `SN-${page.id} — Scanned page`,
         body: page.text,
-        thumb: { code: `Page ${page.id}`, label: `Scanned page ${page.id}`, variant: "notes", meta: page.text },
+        thumb: { code: `SN-${page.id}`, label: "Scanned page", variant: "notes", meta: page.text },
         kind: "scan",
         r: 9,
       });
@@ -230,21 +220,21 @@ export function GraphTab() {
     }
     for (const ce of caseEmployers) {
       const doc = reportDocs[ce.id] ?? defaultDoc(ce.id, caseEmployers);
-      doc.orders.forEach((item, i) =>
+      doc.orders.forEach((item) =>
         list.push({
-          id: `order-${ce.id}-${i}`,
-          label: `Order ${i + 1}`,
-          title: `Order ${i + 1} · ${ce.label}`,
+          id: `order-${item.code}`,
+          label: item.code,
+          title: `${item.code} — Order for ${ce.label}`,
           body: item.text,
           kind: "order",
           r: 10,
         }),
       );
-      doc.refs.forEach((item, i) =>
+      doc.refs.forEach((item) =>
         list.push({
-          id: `ref-${ce.id}-${i}`,
-          label: `Reference ${i + 1}`,
-          title: `Reference ${i + 1} · ${ce.label}`,
+          id: `ref-${item.code}`,
+          label: item.code,
+          title: `${item.code} — Reference for ${ce.label}`,
           body: `Reference:\n${item.reference}\n\nDetails discussed:\n${item.details}`,
           kind: "reference",
           r: 10,
@@ -254,8 +244,8 @@ export function GraphTab() {
     for (const d of documents) {
       list.push({
         id: `doc-${d.id}`,
-        label: d.name,
-        title: d.name,
+        label: d.code,
+        title: `${d.code} — ${d.name}`,
         meta: formatBytes(d.size),
         thumb: { code: fileExtLabel(d.name), label: d.name, variant: "placeholder", meta: formatBytes(d.size) },
         kind: "document",
@@ -273,7 +263,6 @@ export function GraphTab() {
   /** Edges Sherlock infers from tags already on the data — the starting point before manual edits. */
   const inferredEdges = useMemo<GraphEdge[]>(() => {
     const edges: GraphEdge[] = [];
-    for (const ce of caseEmployers) edges.push(["case", ce.id]);
 
     for (const e of CASE_EVIDENCE) {
       const emp = employerForSlot(e.employer);
@@ -290,13 +279,13 @@ export function GraphTab() {
 
     for (const ce of caseEmployers) {
       const doc = reportDocs[ce.id] ?? defaultDoc(ce.id, caseEmployers);
-      doc.orders.forEach((item, i) => {
-        const id = `order-${ce.id}-${i}`;
+      doc.orders.forEach((item) => {
+        const id = `order-${item.code}`;
         edges.push([ce.id, id]);
         for (const code of item.evidence) if (EVIDENCE_BY_CODE[code]) edges.push([id, code]);
       });
-      doc.refs.forEach((item, i) => {
-        const id = `ref-${ce.id}-${i}`;
+      doc.refs.forEach((item) => {
+        const id = `ref-${item.code}`;
         edges.push([ce.id, id]);
         for (const code of item.evidence) if (EVIDENCE_BY_CODE[code]) edges.push([id, code]);
       });
@@ -320,10 +309,10 @@ export function GraphTab() {
 
   const pos = useMemo(() => layoutNodes(nodes, edges, width, height), [nodes, edges]);
 
-  /** Anything (other than the case/employer nodes themselves) with no path —
-      direct or via a chain of other links, e.g. evidence -> order -> employer —
-      to an employer. Only truly stranded artifacts get flagged; a note linked
-      only to another note, never reaching an employer, still counts as stranded. */
+  /** Anything (other than an employer node itself) with no path — direct or
+      via a chain of other links, e.g. evidence -> order -> employer — to an
+      employer. Only truly stranded artifacts get flagged; a note linked only
+      to another note, never reaching an employer, still counts as stranded. */
   const employerIds = useMemo(() => new Set(caseEmployers.map((ce) => ce.id)), [caseEmployers]);
   const reachesEmployer = useMemo(() => {
     const adjacent = new Map<string, string[]>();
@@ -344,8 +333,7 @@ export function GraphTab() {
     }
     return seen;
   }, [edges, employerIds]);
-  const isDisconnected = (n: GNode) =>
-    n.kind !== "case" && n.kind !== "employer" && !reachesEmployer.has(n.id);
+  const isDisconnected = (n: GNode) => n.kind !== "employer" && !reachesEmployer.has(n.id);
 
   const sel = selectedGraphNode;
   const linkedTo = useMemo(() => {

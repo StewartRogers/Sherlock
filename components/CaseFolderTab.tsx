@@ -102,7 +102,6 @@ export function CaseFolderTab() {
 
   const photoCount = captureStep + CARRIED_PHOTOS;
   const noteCount = notes.length + CARRIED_NOTES;
-  const openCount = CASE_EVIDENCE.filter((e) => e.type === "open").length;
 
   function toggleSection(key: SectionKey) {
     setOpen((s) => ({ ...s, [key]: !s[key] }));
@@ -136,7 +135,7 @@ export function CaseFolderTab() {
         ))}
       </div>
 
-      <div className="sh-stats sh-section">
+      <div className="sh-stats sh-section" style={{ flexWrap: "wrap" }}>
         <div>
           <div className="sh-stat-num">{photoCount}</div>
           <div className="sh-stat-label">Photos</div>
@@ -146,14 +145,16 @@ export function CaseFolderTab() {
           <div className="sh-stat-label">Notes</div>
         </div>
         <div>
-          <div className="sh-stat-num">{documents.length}</div>
-          <div className="sh-stat-label">Documents</div>
+          <div className="sh-stat-num">{requestItems.length}</div>
+          <div className="sh-stat-label">Requests</div>
         </div>
         <div>
-          <div className="sh-stat-num" style={{ color: "var(--color-accent-2)" }}>
-            {openCount}
-          </div>
-          <div className="sh-stat-label">Open</div>
+          <div className="sh-stat-num">{scanPages.length}</div>
+          <div className="sh-stat-label">Scanned notes</div>
+        </div>
+        <div>
+          <div className="sh-stat-num">{documents.length}</div>
+          <div className="sh-stat-label">Documents</div>
         </div>
       </div>
 
@@ -218,12 +219,15 @@ export function CaseFolderTab() {
                 <div className="sh-row" style={{ alignItems: "flex-start", gap: "var(--space-3)" }} key={page.id}>
                   <EvidenceThumb
                     size={80}
-                    item={{ code: `Page ${page.id}`, label: `Scanned page ${page.id}`, variant: "notes", meta: page.text }}
+                    item={{ code: `SN-${page.id}`, label: "Scanned page", variant: "notes", meta: page.text }}
                     onOpen={setViewing}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="sh-row-title" style={{ fontSize: 14, marginBottom: 4 }}>
-                      Page {page.id}
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+                      <span className="tag tag-neutral">SN-{page.id}</span>
+                      <span className="sh-row-title" style={{ fontSize: 14 }}>
+                        Scanned page
+                      </span>
                     </div>
                     <p className="sh-meta" style={{ fontSize: 13, lineHeight: 1.5, margin: 0, whiteSpace: "pre-wrap" }}>
                       {page.text}
@@ -272,11 +276,14 @@ export function CaseFolderTab() {
                       onOpen={setViewing}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        className="sh-row-title"
-                        style={{ fontSize: 14, marginBottom: 4, overflowWrap: "break-word" }}
-                      >
-                        {d.name}
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+                        <span className="tag tag-neutral">{d.code}</span>
+                        <span
+                          className="sh-row-title"
+                          style={{ fontSize: 14, overflowWrap: "break-word" }}
+                        >
+                          {d.name}
+                        </span>
                       </div>
                       <p className="sh-meta" style={{ fontSize: 13, margin: 0 }}>
                         {formatBytes(d.size)} · {employerLabels}

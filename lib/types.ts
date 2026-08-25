@@ -56,12 +56,14 @@ export interface Note {
 
 /** A drafted order, with the evidence codes it was drawn from. */
 export interface ReportItem {
+  code: string;
   text: string;
   evidence: string[];
 }
 
 /** A regulation reference, split into the citation/regulation text and what was discussed on site. */
 export interface RegRefItem {
+  code: string;
   reference: string;
   details: string;
   evidence: string[];
@@ -75,6 +77,7 @@ export interface ReportDoc {
 }
 
 export interface RecentCase {
+  id: string;
   name: string;
   meta: string;
 }
@@ -87,6 +90,7 @@ export interface JobsiteLocation {
 
 export interface UploadedDocument {
   id: number;
+  code: string;
   name: string;
   size: number;
   employers: string[];

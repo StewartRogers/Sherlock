@@ -47,11 +47,14 @@ export function ScanTab() {
           {scanPages.map((page) => (
             <div className="sh-row" style={{ alignItems: "flex-start", gap: "var(--space-3)" }} key={page.id}>
               <div className="sh-thumb" style={{ width: 88, height: 88, flex: "none" }}>
-                <ImageSlot label={`page ${page.id}`} variant="notes" />
+                <ImageSlot label={`SN-${page.id}`} variant="notes" />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="sh-row-title" style={{ fontSize: 14, marginBottom: 4 }}>
-                  Page {page.id}
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+                  <span className="tag tag-neutral">SN-{page.id}</span>
+                  <span className="sh-row-title" style={{ fontSize: 14 }}>
+                    Scanned page
+                  </span>
                 </div>
                 <label className="sh-meta" htmlFor={`scan-text-${page.id}`} style={{ fontSize: 12 }}>
                   Scanned text — edit if the scan isn&apos;t quite right

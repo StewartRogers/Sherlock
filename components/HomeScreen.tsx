@@ -1,12 +1,11 @@
 "use client";
 
-import { RECENT_CASES } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import { PlusIcon } from "./icons";
 
 export function HomeScreen() {
-  const { visibleCases, goNewCase, openCase, showMoreCases } = useSherlock();
-  const shown = RECENT_CASES.slice(0, visibleCases);
+  const { recentCases, visibleCases, goNewCase, openCase, showMoreCases } = useSherlock();
+  const shown = recentCases.slice(0, visibleCases);
 
   return (
     <div className="sh-pad" style={{ flex: 1, overflowY: "auto" }}>
@@ -36,7 +35,7 @@ export function HomeScreen() {
           <div className="sh-kicker">Recent</div>
           <div className="sh-list">
             {shown.map((rc) => (
-              <div className="sh-row" key={rc.name}>
+              <div className="sh-row" key={rc.id}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="sh-row-title">{rc.name}</div>
                   <div className="sh-row-meta">{rc.meta}</div>
@@ -45,7 +44,7 @@ export function HomeScreen() {
                   type="button"
                   className="btn btn-secondary"
                   style={{ flex: "none" }}
-                  onClick={openCase}
+                  onClick={() => openCase(rc.id)}
                   aria-label={`Open ${rc.name}`}
                 >
                   Open
@@ -53,7 +52,7 @@ export function HomeScreen() {
               </div>
             ))}
           </div>
-          {visibleCases < RECENT_CASES.length && (
+          {visibleCases < recentCases.length && (
             <button
               type="button"
               className="btn btn-ghost btn-block"

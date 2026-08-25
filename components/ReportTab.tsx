@@ -75,7 +75,7 @@ export function ReportTab() {
           <textarea
             id="report-note"
             className="input"
-            rows={7}
+            rows={21}
             value={reportDoc.note}
             onChange={(e) => setReportNote(e.target.value)}
             placeholder="Notes for this employer"
@@ -89,7 +89,7 @@ export function ReportTab() {
           <div className="sh-kicker">Orders</div>
           {reportDoc.orders.map((item, i) => (
             <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`order-${i}`}>
-              <label htmlFor={`order-${i}`}>Order {i + 1}</label>
+              <label htmlFor={`order-${i}`}>{item.code}</label>
               <textarea
                 id={`order-${i}`}
                 className="input"
@@ -111,7 +111,7 @@ export function ReportTab() {
           {reportDoc.refs.map((item, i) => (
             <div style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
               <div className="sh-row-title" style={{ fontSize: 13, marginBottom: 6 }}>
-                Reference {i + 1}
+                {item.code}
               </div>
               <div className="sh-cols">
                 <div className="field">
