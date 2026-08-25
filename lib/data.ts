@@ -21,7 +21,7 @@ const DESC = {
 
 /** Sample text Sherlock's scanner would lift from a notebook page — cycled as pages are scanned. */
 export const SAMPLE_SCAN_TEXT: string[] = [
-  "E-14 — worker pressure washing shingles, no harness. Approx 23 ft to grade, 4:12 pitch estimated by eye. Told rep this needs fall protection today, not after.",
+  "E-14 — worker pressure washing shingles, no harness. Approx 24 ft to grade, 4:12 pitch estimated by eye. Told rep this needs fall protection today, not after.",
   "Ground level — 2 workers cutting + loading, no one directing them. Supervisor's truck in lot but no supervisor seen. Need to figure out who this belongs to.",
   "REF-1 — first aid cert on wall expires in 3 wks. Reminded rep to renew before it lapses. Not an order, just a reference.",
   "REQ-1 — training records not on site today. Asked rep to email them over. Following up if not received in a few days.",
@@ -36,11 +36,15 @@ export const SAMPLE_SCAN_TEXT: string[] = [
  */
 export const REPORT_DEFAULTS: ReportDoc[] = [
   {
-    note: "Drafted from the photos, notes, and scanned pages tagged to Rainshield Roofing. A worker was observed pressure washing shingles near the leading edge of a steep roof with no personal fall protection in use — roughly 23 feet to grade on a 4:12 pitch. The site's first aid attendant certificate is also nearing its expiry date. Review this summary, then write the Inspection Report in WSM 360 in your own words.",
+    note: "This Inspection Report contains an order to stop work.\n\nI conducted an inspection at this workplace, a two-storey townhouse with the wood frame partially completed and roofing work underway. Rainshield Roofing, the roofing contractor for the workplace, was performing roofing related work activities at the time of this inspection.\n\nFall Protection\nAs I approached the site, I observed a worker performing roofing work at the leading edge of the roof, pressure washing shingles with no system of fall protection in use (refer to Order #1). I asked whether fall protection equipment was available on site; none could be produced.\n\nI advised the employer of the requirement to have an appropriate system of fall protection in place when workers are exposed to fall hazards of 10 feet or more above a surface or grade.\n\nStop Work\nI determined that the worker was at high risk of death or serious injury from a fall hazard of approximately 24 feet to the hard-packed ground below, which was covered in construction debris. The employer was informed that a stop work order was being issued, as no compliant fall protection equipment was available on site and the worker had not received the instruction, training, or supervision required to work safely at heights (refer to Order #2).\n\nWe discussed the measures needed to achieve compliance before the stop work order can be canceled. The employer was also advised that violating a stop work order can lead to further enforcement action, including a financial penalty.\n\nOther Observations\nThe site's first aid attendant certificate was also reviewed and found to be nearing its expiry date (refer to Reference 1). Two workers were separately observed cutting and loading material at ground level with no one directing the work; this has been logged as an open item pending confirmation of which employer is responsible.\n\nDue Diligence\nWe discussed due diligence. Due diligence requires taking all reasonable steps to protect workers from harm. \"All reasonable steps\" is based on the level of judgment and care a person would reasonably be expected to exercise under the circumstances. An employer that actively manages health and safety and takes all reasonable steps to protect workers from harm is being duly diligent.\n\nResources\nThe following WorkSafeBC resources were discussed with the employer:\n• Due diligence — WorkSafeBC guidance on reasonable care\n• Creating a fall protection plan for your worksite — fillable template\n• Toolbox Meeting Guide — working at heights\n\nReview this draft, then write the Inspection Report in WSM 360 in your own words.",
     noteEvidence: ["E-10", "E-11", "E-12", "E-13", "E-14", "REF-1"],
     orders: [
       {
-        text: "I observed a worker for Rainshield Roofing performing roofing work on a 4:12 sloped roof. The worker was not protected by a system of fall protection and was exposed to a fall hazard of approximately 23 feet above hard-packed ground with construction debris.\n\nThis is in contravention of the Occupational Health and Safety Regulation Section 11.2(1)(a).\n\nUnless elsewhere provided for in this Regulation, an employer must ensure that a fall protection system is used when work is being done at a place from which a fall of 3 m (10 ft) or more may occur.\n\nMeasures to Ensure Compliance:\nPrior to resuming work at heights, the employer must demonstrate a compliant fall protection system appropriate for the work to be performed.",
+        text: "I observed a worker for Rainshield Roofing performing roofing work on a 4:12 sloped roof (confirmed using a roof slope calculator). The worker was not protected by a system of fall protection and was exposed to a fall hazard of approximately 24 feet (confirmed using a Hilti measuring laser) above hard-packed ground covered in construction debris.\n\nThis is in contravention of the Occupational Health and Safety Regulation Section 11.2(1)(a).\n\nUnless elsewhere provided for in this Regulation, an employer must ensure that a fall protection system is used when work is being done at a place from which a fall of 3 m (10 ft) or more may occur.\n\nMeasures to Ensure Compliance:\nPrior to resuming work at heights, the employer must demonstrate a compliant fall protection system appropriate for the work to be performed.",
+        evidence: ["E-10", "E-11", "E-12", "E-13", "E-14"],
+      },
+      {
+        text: "I determined that the worker for Rainshield Roofing was at high risk of death or serious injury from a fall hazard of approximately 24 feet to the hard-packed ground below, which was covered in construction debris. No compliant fall protection equipment was available on site, and the worker had not received the instruction, training, or supervision required to work safely at heights.\n\nThis is in contravention of the Workers Compensation Act Section 90(2).\n\nThe Board may make an order under subsection (1) if the Board has reasonable grounds for believing there is a high risk of serious injury, serious illness or death to a worker at the workplace.\n\nMeasures to Ensure Compliance:\nAll work at heights on this site must stop immediately. Before work resumes, the employer must demonstrate that a compliant fall protection system is available and in use, and that workers have received the required instruction, training, and supervision to work safely at heights.",
         evidence: ["E-10", "E-11", "E-12", "E-13", "E-14"],
       },
     ],
@@ -175,6 +179,12 @@ export function nearestJobsite(lat: number, lng: number): JobsiteLocation {
       ? site
       : closest,
   );
+}
+
+/** A short file-type label for a document's stand-in thumbnail, e.g. "PDF". */
+export function fileExtLabel(name: string): string {
+  const ext = name.split(".").pop();
+  return ext && ext !== name ? ext.slice(0, 4).toUpperCase() : "DOC";
 }
 
 /** Formats a byte count for display next to an uploaded document. */

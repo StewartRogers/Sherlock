@@ -1,16 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import { formatBytes } from "@/lib/data";
+import { fileExtLabel, formatBytes } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import { ImageSlot } from "./ImageSlot";
 import { UploadIcon } from "./icons";
-
-/** A short file-type label for the document's stand-in thumbnail, e.g. "PDF". */
-function extLabel(name: string): string {
-  const ext = name.split(".").pop();
-  return ext && ext !== name ? ext.slice(0, 4).toUpperCase() : "DOC";
-}
 
 export function UploadTab() {
   const { documents, caseEmployers, addDocuments, toggleDocumentEmployer, removeDocument } =
@@ -79,7 +73,7 @@ export function UploadTab() {
                 key={doc.id}
               >
                 <div className="sh-thumb" style={{ width: 56, height: 56, flex: "none" }}>
-                  <ImageSlot label={extLabel(doc.name)} variant="placeholder" />
+                  <ImageSlot label={fileExtLabel(doc.name)} variant="placeholder" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div

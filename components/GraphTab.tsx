@@ -1,17 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CASE_EVIDENCE, EVIDENCE_BY_CODE } from "@/lib/data";
+import { CASE_EVIDENCE, EVIDENCE_BY_CODE, fileExtLabel, formatBytes } from "@/lib/data";
 import { edgeKey, useSherlock } from "@/lib/store";
 import type { GraphEdge } from "@/lib/types";
+import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
 
-type NodeKind = "case" | "employer" | "evidence" | "order" | "reference" | "note" | "request" | "scan";
+type NodeKind =
+  | "case"
+  | "employer"
+  | "evidence"
+  | "open"
+  | "order"
+  | "reference"
+  | "note"
+  | "request"
+  | "scan"
+  | "document";
 
 interface GNode {
   id: string;
+  /** Short text under the node in the diagram. */
   label: string;
-  /** Fuller description shown in the side panel; falls back to label. */
-  detail?: string;
+  /** Bold heading shown at the top of the side panel; falls back to label. */
+  title?: string;
+  /** Fuller description shown in the side panel below the title/thumbnail. */
+  body?: string;
+  /** A secondary detail line, e.g. a file size. */
+  meta?: string;
+  /** Set when the node has an actual image to show — a photo or scanned page. */
+  thumb?: EvidenceViewItem;
   kind: NodeKind;
   r: number;
 }
@@ -20,22 +38,26 @@ const KIND_COLOR: Record<NodeKind, string> = {
   case: "var(--color-neutral-700)",
   employer: "var(--color-accent-600)",
   evidence: "var(--color-accent-400)",
+  open: "var(--color-accent-2-400)",
   order: "var(--color-accent-2-600)",
   reference: "var(--color-neutral-500)",
   note: "var(--color-neutral-600)",
   request: "var(--color-accent-2-700)",
   scan: "var(--color-neutral-400)",
+  document: "var(--color-neutral-800)",
 };
 
 const KIND_LABEL: Record<NodeKind, string> = {
   case: "Casefile",
   employer: "Employer",
   evidence: "Evidence",
+  open: "Open item · needs review",
   order: "Order",
   reference: "Reference",
   note: "Note",
   request: "Request",
   scan: "Scanned page",
+  document: "Document",
 };
 
 /**
@@ -128,6 +150,7 @@ export function GraphTab() {
     caseEmployers,
     notes,
     scanPages,
+    documents,
     reportDocs,
     defaultDoc,
     employerForSlot,
@@ -140,6 +163,7 @@ export function GraphTab() {
   } = useSherlock();
 
   const [addTarget, setAddTarget] = useState("");
+  const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
   const width = 640;
   const height = 420;
 
@@ -147,35 +171,79 @@ export function GraphTab() {
     const list: GNode[] = [{ id: "case", label: "Casefile", kind: "case", r: 20 }];
     for (const ce of caseEmployers) list.push({ id: ce.id, label: ce.label, kind: "employer", r: 16 });
     for (const e of CASE_EVIDENCE) {
+      const isOpen = e.type === "open";
       list.push({
         id: e.code,
-        label: e.code === "—" ? "Open item" : e.code,
-        detail: e.label,
-        kind: "evidence",
+        label: isOpen ? "Open item" : e.code,
+        title: e.label,
+        body: e.description,
+        thumb: { code: e.code, label: e.label, variant: "construction", meta: e.description },
+        kind: isOpen ? "open" : "evidence",
         r: 11,
       });
     }
     for (const page of scanPages) {
-      list.push({ id: `scan-${page.id}`, label: `Page ${page.id}`, kind: "scan", r: 9 });
+      list.push({
+        id: `scan-${page.id}`,
+        label: `Page ${page.id}`,
+        title: `Scanned page ${page.id}`,
+        body: page.text,
+        thumb: { code: `Page ${page.id}`, label: `Scanned page ${page.id}`, variant: "notes", meta: page.text },
+        kind: "scan",
+        r: 9,
+      });
     }
     for (const n of notes) {
-      list.push({ id: `note-${n.id}`, label: n.code, kind: n.kind === "request" ? "request" : "note", r: 9 });
+      list.push({
+        id: `note-${n.id}`,
+        label: n.code,
+        title: n.code,
+        body: n.text,
+        kind: n.kind === "request" ? "request" : "note",
+        r: 9,
+      });
     }
     for (const ce of caseEmployers) {
       const doc = reportDocs[ce.id] ?? defaultDoc(ce.id, caseEmployers);
-      doc.orders.forEach((_, i) =>
-        list.push({ id: `order-${ce.id}-${i}`, label: `Order ${i + 1}`, kind: "order", r: 10 }),
+      doc.orders.forEach((item, i) =>
+        list.push({
+          id: `order-${ce.id}-${i}`,
+          label: `Order ${i + 1}`,
+          title: `Order ${i + 1} · ${ce.label}`,
+          body: item.text,
+          kind: "order",
+          r: 10,
+        }),
       );
-      doc.refs.forEach((_, i) =>
-        list.push({ id: `ref-${ce.id}-${i}`, label: `Reference ${i + 1}`, kind: "reference", r: 10 }),
+      doc.refs.forEach((item, i) =>
+        list.push({
+          id: `ref-${ce.id}-${i}`,
+          label: `Reference ${i + 1}`,
+          title: `Reference ${i + 1} · ${ce.label}`,
+          body: `Reference:\n${item.reference}\n\nDetails discussed:\n${item.details}`,
+          kind: "reference",
+          r: 10,
+        }),
       );
     }
+    for (const d of documents) {
+      list.push({
+        id: `doc-${d.id}`,
+        label: d.name,
+        title: d.name,
+        meta: formatBytes(d.size),
+        thumb: { code: fileExtLabel(d.name), label: d.name, variant: "placeholder", meta: formatBytes(d.size) },
+        kind: "document",
+        r: 10,
+      });
+    }
     return list;
-  }, [caseEmployers, notes, scanPages, reportDocs, defaultDoc]);
+  }, [caseEmployers, notes, scanPages, documents, reportDocs, defaultDoc]);
 
   const labelById = useMemo(() => new Map(nodes.map((n) => [n.id, n.label])), [nodes]);
-  const detailById = useMemo(() => new Map(nodes.map((n) => [n.id, n.detail ?? n.label])), [nodes]);
+  const titleById = useMemo(() => new Map(nodes.map((n) => [n.id, n.title ?? n.label])), [nodes]);
   const kindById = useMemo(() => new Map(nodes.map((n) => [n.id, n.kind])), [nodes]);
+  const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
   /** Edges Sherlock infers from tags already on the data — the starting point before manual edits. */
   const inferredEdges = useMemo<GraphEdge[]>(() => {
@@ -189,6 +257,10 @@ export function GraphTab() {
 
     for (const n of notes) {
       for (const empId of n.employers) edges.push([empId, `note-${n.id}`]);
+    }
+
+    for (const d of documents) {
+      for (const empId of d.employers) edges.push([empId, `doc-${d.id}`]);
     }
 
     for (const ce of caseEmployers) {
@@ -205,7 +277,7 @@ export function GraphTab() {
       });
     }
     return edges;
-  }, [caseEmployers, notes, reportDocs, defaultDoc, employerForSlot]);
+  }, [caseEmployers, notes, documents, reportDocs, defaultDoc, employerForSlot]);
 
   const edges = useMemo<GraphEdge[]>(() => {
     const removed = new Set(removedGraphLinks);
@@ -290,7 +362,7 @@ export function GraphTab() {
                 tabIndex={0}
                 role="button"
                 aria-pressed={isSel}
-                aria-label={`${n.detail ?? n.label} (${KIND_LABEL[n.kind]})`}
+                aria-label={`${n.title ?? n.label} (${KIND_LABEL[n.kind]})`}
               >
                 <circle
                   cx={p.x}
@@ -319,78 +391,129 @@ export function GraphTab() {
 
       <div className="sh-measure">
         {sel ? (
-          <div className="card elev-md">
-            <div className="card-kicker">{KIND_LABEL[kindById.get(sel) ?? "evidence"]}</div>
-            <p className="card-body" style={{ fontWeight: 600, marginBottom: 0 }}>
-              {detailById.get(sel)}
-            </p>
+          (() => {
+            const node = nodeById.get(sel);
+            return (
+              <div className="card elev-md">
+                <div className="card-kicker">{KIND_LABEL[kindById.get(sel) ?? "evidence"]}</div>
+                <p
+                  className="card-body"
+                  style={{ fontWeight: 600, marginBottom: node ? 8 : 0, overflowWrap: "break-word" }}
+                >
+                  {titleById.get(sel)}
+                </p>
 
-            <div className="sh-section" style={{ marginTop: "var(--space-4)" }}>
-              <div className="sh-kicker">Linked to</div>
-              {linkedTo.size === 0 ? (
-                <p className="sh-meta">Nothing linked yet.</p>
-              ) : (
-                <div className="sh-list">
-                  {[...linkedTo].map((id) => (
-                    <div className="sh-row" key={id}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="sh-row-title" style={{ fontSize: 14 }}>
-                          {detailById.get(id)}
+                {node?.kind === "open" && (
+                  <p className="sh-meta" style={{ fontSize: 12, marginBottom: 8 }}>
+                    Sherlock couldn&apos;t confidently tie this to one employer or evidence code yet.
+                    Tag it to an employer to fold it into that report, or resolve it directly.
+                  </p>
+                )}
+
+                {node?.meta && (
+                  <p className="sh-meta" style={{ fontSize: 12, marginBottom: 8 }}>
+                    {node.meta}
+                  </p>
+                )}
+
+                {node?.thumb && (
+                  <div style={{ marginBottom: 8 }}>
+                    <EvidenceThumb item={node.thumb} onOpen={setViewing} size={96} />
+                  </div>
+                )}
+
+                {node?.body && (
+                  <p className="sh-meta" style={{ whiteSpace: "pre-wrap" }}>
+                    {node.body}
+                  </p>
+                )}
+
+                <div className="sh-section" style={{ marginTop: "var(--space-4)" }}>
+                  <div className="sh-kicker">Linked to</div>
+                  {linkedTo.size === 0 ? (
+                    <p className="sh-meta">Nothing linked yet.</p>
+                  ) : (
+                    <div className="sh-list">
+                      {[...linkedTo].map((id) => (
+                        <div
+                          className="sh-row"
+                          key={id}
+                          role="button"
+                          tabIndex={0}
+                          style={{ cursor: "pointer" }}
+                          onClick={() => selectGraphNode(id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              selectGraphNode(id);
+                            }
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="sh-row-title" style={{ fontSize: 14 }}>
+                              {titleById.get(id)}
+                            </div>
+                            <div className="sh-row-meta">{KIND_LABEL[kindById.get(id) ?? "evidence"]}</div>
+                          </div>
+                          <button
+                            type="button"
+                            className="sh-pillbtn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeGraphLink(sel, id);
+                            }}
+                            aria-label={`Remove link to ${titleById.get(id)}`}
+                          >
+                            Remove
+                          </button>
                         </div>
-                        <div className="sh-row-meta">{KIND_LABEL[kindById.get(id) ?? "evidence"]}</div>
-                      </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="sh-section" style={{ marginTop: "var(--space-4)" }}>
+                  <div className="sh-kicker">Add a link</div>
+                  {addableNodes.length === 0 ? (
+                    <p className="sh-meta">Everything else is already linked.</p>
+                  ) : (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <select
+                        className="input"
+                        value={addTarget}
+                        onChange={(e) => setAddTarget(e.target.value)}
+                        aria-label="Node to link"
+                      >
+                        <option value="">Choose a node…</option>
+                        {addableNodes.map((n) => (
+                          <option key={n.id} value={n.id}>
+                            {n.title ?? n.label} · {KIND_LABEL[n.kind]}
+                          </option>
+                        ))}
+                      </select>
                       <button
                         type="button"
-                        className="sh-pillbtn"
-                        onClick={() => removeGraphLink(sel, id)}
-                        aria-label={`Remove link to ${detailById.get(id)}`}
+                        className="btn btn-secondary"
+                        disabled={!addTarget}
+                        onClick={() => {
+                          addGraphLink(sel, addTarget);
+                          setAddTarget("");
+                        }}
                       >
-                        Remove
+                        Add
                       </button>
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
-
-            <div className="sh-section" style={{ marginTop: "var(--space-4)" }}>
-              <div className="sh-kicker">Add a link</div>
-              {addableNodes.length === 0 ? (
-                <p className="sh-meta">Everything else is already linked.</p>
-              ) : (
-                <div style={{ display: "flex", gap: 8 }}>
-                  <select
-                    className="input"
-                    value={addTarget}
-                    onChange={(e) => setAddTarget(e.target.value)}
-                    aria-label="Node to link"
-                  >
-                    <option value="">Choose a node…</option>
-                    {addableNodes.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.detail ?? n.label} · {KIND_LABEL[n.kind]}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={!addTarget}
-                    onClick={() => {
-                      addGraphLink(sel, addTarget);
-                      setAddTarget("");
-                    }}
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
+            );
+          })()
         ) : (
           <p className="sh-meta">Select a node to see its links and edit them.</p>
         )}
       </div>
+
+      <EvidenceViewerOverlay item={viewing} onClose={() => setViewing(null)} />
     </div>
   );
 }
