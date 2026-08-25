@@ -75,8 +75,16 @@ function NoteRows({
 }
 
 export function CaseFolderTab() {
-  const { caseEmployers, captureStep, notes, scanPages, primaryMap, employerForSlot, setPrimary } =
-    useSherlock();
+  const {
+    caseEmployers,
+    caseAddress,
+    captureStep,
+    notes,
+    scanPages,
+    primaryMap,
+    employerForSlot,
+    setPrimary,
+  } = useSherlock();
 
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({
     photos: true,
@@ -115,7 +123,7 @@ export function CaseFolderTab() {
       <div className="sh-kicker">Casefile · Active</div>
       <h2 className="sh-title">Meridian Townhomes</h2>
       <p className="sh-meta">
-        {NEW_CASE_STAMP.address} · {NEW_CASE_STAMP.timestamp}
+        {caseAddress} · {NEW_CASE_STAMP.timestamp}
       </p>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: "var(--space-3)" }}>

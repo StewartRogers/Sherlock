@@ -63,4 +63,10 @@ export interface RecentCase {
   meta: string;
 }
 
+export interface JobsiteLocation {
+  address: string;
+  lat: number;
+  lng: number;
+}
+
 export type GraphEdge = [string, string];

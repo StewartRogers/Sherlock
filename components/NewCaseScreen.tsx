@@ -1,6 +1,7 @@
 "use client";
 
-import { NEW_CASE_STAMP } from "@/lib/data";
+import { useState } from "react";
+import { NEW_CASE_STAMP, nearestJobsite } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 
 export function NewCaseScreen() {
@@ -8,11 +9,40 @@ export function NewCaseScreen() {
     newCaseEmployers,
     newEmployerText,
     setNewEmployerText,
+    newCaseAddress,
+    setNewCaseAddress,
     addEmployer,
     removeNewEmployer,
     startInspection,
     backHome,
   } = useSherlock();
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
+
+  function useCurrentLocation() {
+    if (!("geolocation" in navigator)) {
+      setLocateError("Location services aren't available on this device.");
+      return;
+    }
+    setLocating(true);
+    setLocateError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const site = nearestJobsite(pos.coords.latitude, pos.coords.longitude);
+        setNewCaseAddress(site.address);
+        setLocating(false);
+      },
+      (err) => {
+        setLocateError(
+          err.code === err.PERMISSION_DENIED
+            ? "Location access was denied — enter the address manually."
+            : "Couldn't get your location — enter the address manually.",
+        );
+        setLocating(false);
+      },
+      { timeout: 10000 },
+    );
+  }
 
   return (
     <div className="sh-pad" style={{ flex: 1, overflowY: "auto" }}>
@@ -20,14 +50,42 @@ export function NewCaseScreen() {
         <div className="sh-kicker">New casefile</div>
         <h2 className="sh-title">Start an inspection</h2>
         <p className="sh-meta">
-          Sherlock will save the date, time, and location automatically, then keep everything you
-          capture organized in one place.
+          Sherlock will save the date and time automatically, then keep everything you capture
+          organized in one place.
         </p>
 
-        <div className="sh-section">
-          <div className="sh-kicker">Stamped automatically</div>
-          <div style={{ fontSize: 14 }}>{NEW_CASE_STAMP.address}</div>
-          <div style={{ fontSize: 14, opacity: 0.65 }}>{NEW_CASE_STAMP.timestamp}</div>
+        <div className="sh-section field">
+          <label htmlFor="site-address">Site address</label>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              id="site-address"
+              type="text"
+              className="input"
+              placeholder={NEW_CASE_STAMP.address}
+              value={newCaseAddress}
+              onChange={(e) => setNewCaseAddress(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={useCurrentLocation}
+              disabled={locating}
+            >
+              {locating ? "Locating…" : "Use my location"}
+            </button>
+          </div>
+          {locateError && (
+            <div style={{ fontSize: 12, color: "var(--color-accent-2-700)", marginTop: 6 }}>
+              {locateError}
+            </div>
+          )}
+          <div style={{ fontSize: 12, opacity: 0.55, marginTop: 6 }}>
+            Picks the nearest known jobsite from your location — review and edit before starting.
+          </div>
+          <div style={{ fontSize: 14, opacity: 0.65, marginTop: "var(--space-2)" }}>
+            {NEW_CASE_STAMP.timestamp}
+          </div>
         </div>
 
         <div className="sh-section field">

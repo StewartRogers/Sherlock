@@ -45,8 +45,9 @@ export function ReportTab() {
       </p>
 
       <div
-        style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "var(--space-4) 0" }}
-        role="group"
+        className="sh-tabswitch"
+        style={{ flexWrap: "wrap", margin: "var(--space-4) 0" }}
+        role="radiogroup"
         aria-label="Employer"
       >
         {caseEmployers.map((ce) => {
@@ -55,8 +56,9 @@ export function ReportTab() {
             <button
               type="button"
               key={ce.id}
-              className={`sh-pillbtn ${active ? "active" : ""}`}
-              aria-pressed={active}
+              className={`sh-tabswitch-btn ${active ? "active" : ""}`}
+              role="radio"
+              aria-checked={active}
               onClick={() => setReportEmployer(ce.id)}
             >
               {ce.label}

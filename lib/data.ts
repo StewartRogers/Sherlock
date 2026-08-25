@@ -3,6 +3,7 @@ import type {
   CaseEvidence,
   Employer,
   EvidenceType,
+  JobsiteLocation,
   RecentCase,
   ReportDoc,
 } from "./types";
@@ -137,6 +138,41 @@ export const NEW_CASE_STAMP = {
   address: "1450 Meridian Rd, Coquitlam",
   timestamp: "Aug 18, 2026 · 9:14 a.m.",
 };
+
+/**
+ * Known jobsites Sherlock can match a device's coordinates against, standing
+ * in for a real reverse-geocoding service. "Use my location" finds the
+ * nearest one and drops its address into the field for the inspector to edit.
+ */
+export const JOBSITE_LOCATIONS: JobsiteLocation[] = [
+  { address: "1450 Meridian Rd, Coquitlam", lat: 49.2838, lng: -122.7932 },
+  { address: "220 Harbour St, New Westminster", lat: 49.2057, lng: -122.911 },
+  { address: "90 Cascade Way, Abbotsford", lat: 49.0504, lng: -122.3045 },
+  { address: "5600 Northgate Dr, Surrey", lat: 49.1913, lng: -122.849 },
+  { address: "870 Elmwood Ave, Burnaby", lat: 49.2488, lng: -122.9805 },
+  { address: "12 Riverbend Rd, Maple Ridge", lat: 49.2193, lng: -122.5984 },
+  { address: "340 Sunridge Blvd, Delta", lat: 49.0847, lng: -122.911 },
+];
+
+/** Great-circle distance in km, for picking the closest jobsite to a coordinate. */
+function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+/** The jobsite in JOBSITE_LOCATIONS closest to the given coordinate. */
+export function nearestJobsite(lat: number, lng: number): JobsiteLocation {
+  return JOBSITE_LOCATIONS.reduce((closest, site) =>
+    haversineKm(lat, lng, site.lat, site.lng) < haversineKm(lat, lng, closest.lat, closest.lng)
+      ? site
+      : closest,
+  );
+}
 
 /**
  * The demo evidence and graph are authored against two positional employer

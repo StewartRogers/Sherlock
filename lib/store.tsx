@@ -11,6 +11,7 @@ import {
   CAPTURE_PHOTOS,
   DEFAULT_EMPLOYERS,
   EMPLOYER_SLOTS,
+  NEW_CASE_STAMP,
   REPORT_DEFAULTS,
 } from "./data";
 import { SAMPLE_SCAN_TEXT } from "./data";
@@ -31,8 +32,10 @@ interface SherlockState {
   visibleCases: number;
   tab: Tab;
   caseEmployers: Employer[];
+  caseAddress: string;
   newCaseEmployers: string[];
   newEmployerText: string;
+  newCaseAddress: string;
   captureStep: number;
   nudgeDismissed: boolean;
   /** Photo index -> employer ids tagged on that photo. */
@@ -60,8 +63,10 @@ const INITIAL: SherlockState = {
   visibleCases: 5,
   tab: "capture",
   caseEmployers: DEFAULT_EMPLOYERS,
+  caseAddress: NEW_CASE_STAMP.address,
   newCaseEmployers: [],
   newEmployerText: "",
+  newCaseAddress: "",
   captureStep: 0,
   nudgeDismissed: false,
   captureEmployer: {},
@@ -121,6 +126,10 @@ function useSherlockState() {
     (newEmployerText: string) => patch(() => ({ newEmployerText })),
     [patch],
   );
+  const setNewCaseAddress = useCallback(
+    (newCaseAddress: string) => patch(() => ({ newCaseAddress })),
+    [patch],
+  );
   const addEmployer = useCallback(
     () =>
       patch((s) => {
@@ -147,6 +156,7 @@ function useSherlockState() {
           screen: "app",
           tab: "capture",
           caseEmployers: employers,
+          caseAddress: s.newCaseAddress.trim() || NEW_CASE_STAMP.address,
           captureEmployer: {},
           captureStep: 0,
           reportEmployer: employers[0].id,
@@ -408,6 +418,7 @@ function useSherlockState() {
     setTab,
     openCase,
     setNewEmployerText,
+    setNewCaseAddress,
     addEmployer,
     removeNewEmployer,
     startInspection,
