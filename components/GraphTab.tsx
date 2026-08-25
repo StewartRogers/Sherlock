@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CASE_EVIDENCE, EVIDENCE_BY_CODE, fileExtLabel, formatBytes } from "@/lib/data";
 import { edgeKey, useSherlock } from "@/lib/store";
 import type { GraphEdge } from "@/lib/types";
@@ -160,6 +160,22 @@ function layoutNodes(nodes: GNode[], edges: GraphEdge[], width: number, height: 
   return pos;
 }
 
+/** Converts a pointer event's screen coordinates into the SVG's own viewBox
+    coordinate space, so a drag position lines up with node positions regardless
+    of how the SVG is scaled on the page. */
+function toSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number) {
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return { x: 0, y: 0 };
+  const local = pt.matrixTransform(ctm.inverse());
+  return { x: local.x, y: local.y };
+}
+
+/** Drag has to move a few px before it counts as a drag rather than a tap. */
+const DRAG_THRESHOLD = 8;
+
 export function GraphTab() {
   const {
     caseEmployers,
@@ -182,6 +198,12 @@ export function GraphTab() {
   const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
   const width = 640;
   const height = 420;
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const dragged = useRef(false);
+  const [dragFrom, setDragFrom] = useState<string | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
 
   const nodes = useMemo<GNode[]>(() => {
     const list: GNode[] = [];
@@ -309,6 +331,18 @@ export function GraphTab() {
 
   const pos = useMemo(() => layoutNodes(nodes, edges, width, height), [nodes, edges]);
 
+  /** The node (other than excludeId) whose circle the point falls inside, if any —
+      used to find a drop target while dragging a connection from one node to another. */
+  function findNodeAt(pt: { x: number; y: number }, excludeId: string) {
+    for (const n of nodes) {
+      if (n.id === excludeId) continue;
+      const p = pos.get(n.id);
+      if (!p) continue;
+      if (Math.hypot(pt.x - p.x, pt.y - p.y) <= n.r + 6) return n;
+    }
+    return null;
+  }
+
   /** Anything (other than an employer node itself) with no path — direct or
       via a chain of other links, e.g. evidence -> order -> employer — to an
       employer. Only truly stranded artifacts get flagged; a note linked only
@@ -350,19 +384,69 @@ export function GraphTab() {
     [sel, nodes, linkedTo],
   );
 
+  /** Named, ref-reading event handlers, passed directly as the JSX prop (no
+      wrapping arrow) so the node id has to travel via a data attribute rather
+      than a closure — that's what lets React's ref-safety lint see these as
+      real event handlers instead of ref reads happening during render. */
+  function handleNodePointerDown(e: React.PointerEvent<SVGGElement>) {
+    const id = e.currentTarget.dataset.nodeId;
+    if (!id) return;
+    e.stopPropagation();
+    const svg = svgRef.current;
+    if (!svg) return;
+    const pt = toSvgPoint(svg, e.clientX, e.clientY);
+    dragStart.current = pt;
+    dragged.current = false;
+    setDragFrom(id);
+    setDragPos(pt);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handleNodePointerMove(e: React.PointerEvent<SVGGElement>) {
+    const id = e.currentTarget.dataset.nodeId;
+    if (!id || dragFrom !== id) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const pt = toSvgPoint(svg, e.clientX, e.clientY);
+    if (dragStart.current && Math.hypot(pt.x - dragStart.current.x, pt.y - dragStart.current.y) > DRAG_THRESHOLD) {
+      dragged.current = true;
+    }
+    setDragPos(pt);
+  }
+
+  function handleNodePointerUp(e: React.PointerEvent<SVGGElement>) {
+    const id = e.currentTarget.dataset.nodeId;
+    if (!id) return;
+    e.stopPropagation();
+    if (dragFrom !== id) return;
+    const svg = svgRef.current;
+    const pt = svg ? toSvgPoint(svg, e.clientX, e.clientY) : null;
+    if (dragged.current && pt) {
+      const target = findNodeAt(pt, id);
+      if (target) addGraphLink(id, target.id);
+    } else {
+      selectGraphNode(id);
+    }
+    setDragFrom(null);
+    setDragPos(null);
+    dragStart.current = null;
+  }
+
   return (
     <div className="sh-cols" onClick={clearGraphSelection}>
       <div className="sh-measure">
         <h2 className="sh-title">Evidence graph</h2>
         <p className="sh-meta">
-          Tap a node to trace what it connects to and edit its links. Tap empty space to
-          deselect. Editing links changes connections only — the evidence underneath stays
-          exactly as captured.
+          Tap a node to trace what it connects to and edit its links. Drag from one node to
+          another to connect them, or tap a line to remove it. Tap empty space to deselect.
+          Editing links changes connections only — the evidence underneath stays exactly as
+          captured.
         </p>
 
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
-          style={{ width: "100%", height: "auto", maxHeight: 460, marginTop: "var(--space-4)" }}
+          style={{ width: "100%", height: "auto", maxHeight: 460, marginTop: "var(--space-4)", touchAction: "none" }}
           role="group"
           aria-label="Casefile evidence graph"
         >
@@ -372,32 +456,73 @@ export function GraphTab() {
             if (!pa || !pb) return null;
             const active = sel !== null && (a === sel || b === sel);
             return (
-              <line
-                key={`${a}::${b}`}
-                x1={pa.x}
-                y1={pa.y}
-                x2={pb.x}
-                y2={pb.y}
-                stroke={active ? "var(--color-accent)" : sel ? "var(--color-neutral-200)" : "var(--color-divider)"}
-                strokeWidth={active ? 2 : 1}
-              />
+              <g key={`${a}::${b}`}>
+                <line
+                  x1={pa.x}
+                  y1={pa.y}
+                  x2={pb.x}
+                  y2={pb.y}
+                  className="sh-graph-edge-hit"
+                  stroke="transparent"
+                  strokeWidth={14}
+                  style={{ cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeGraphLink(a, b);
+                  }}
+                  aria-hidden="true"
+                />
+                <line
+                  x1={pa.x}
+                  y1={pa.y}
+                  x2={pb.x}
+                  y2={pb.y}
+                  className="sh-graph-edge-line"
+                  stroke={active ? "var(--color-accent)" : sel ? "var(--color-neutral-200)" : "var(--color-divider)"}
+                  strokeWidth={active ? 2 : 1}
+                  style={{ pointerEvents: "none" }}
+                />
+              </g>
             );
           })}
 
-          {nodes.map((n) => {
+          {dragFrom &&
+            dragPos &&
+            (() => {
+              const from = pos.get(dragFrom);
+              if (!from) return null;
+              return (
+                <line
+                  x1={from.x}
+                  y1={from.y}
+                  x2={dragPos.x}
+                  y2={dragPos.y}
+                  stroke="var(--color-accent)"
+                  strokeWidth={2}
+                  strokeDasharray="5 4"
+                  style={{ pointerEvents: "none" }}
+                />
+              );
+            })()}
+
+          {(() => {
+            const dragHoverTarget = dragFrom && dragPos ? findNodeAt(dragPos, dragFrom) : null;
+            return nodes.map((n) => {
             const p = pos.get(n.id);
             if (!p) return null;
             const isSel = sel === n.id;
             const dim = sel !== null && !isSel && !linkedTo.has(n.id);
             const flagged = isDisconnected(n);
             const baseColor = flagged ? DISCONNECTED_COLOR : KIND_COLOR[n.kind];
+            const isDropTarget = dragHoverTarget?.id === n.id;
             return (
               <g
                 key={n.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  selectGraphNode(n.id);
-                }}
+                data-node-id={n.id}
+                onPointerDown={handleNodePointerDown}
+                onPointerMove={handleNodePointerMove}
+                onPointerUp={handleNodePointerUp}
+                onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -405,7 +530,7 @@ export function GraphTab() {
                     selectGraphNode(n.id);
                   }
                 }}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", touchAction: "none" }}
                 tabIndex={0}
                 role="button"
                 aria-pressed={isSel}
@@ -416,8 +541,8 @@ export function GraphTab() {
                   cy={p.y}
                   r={n.r}
                   fill={dim ? `color-mix(in srgb, ${baseColor} 35%, white)` : baseColor}
-                  stroke={isSel ? "var(--color-text)" : "color-mix(in srgb, var(--color-text) 30%, transparent)"}
-                  strokeWidth={isSel ? 2 : 1}
+                  stroke={isSel || isDropTarget ? "var(--color-text)" : "color-mix(in srgb, var(--color-text) 30%, transparent)"}
+                  strokeWidth={isSel || isDropTarget ? 2 : 1}
                 />
                 <text
                   x={p.x}
@@ -432,7 +557,8 @@ export function GraphTab() {
                 </text>
               </g>
             );
-          })}
+            });
+          })()}
         </svg>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px", marginTop: "var(--space-3)" }}>

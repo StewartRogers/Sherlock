@@ -390,3 +390,8 @@ textarea.input { min-height: 90px; resize: vertical; }
   color: var(--color-accent); cursor: pointer;
 }
 .sh-linkbtn:hover { text-decoration: underline; }
+
+/* Evidence graph edges — a wide invisible line carries the click/tap target
+   for removing a connection; hovering it recolors the thin visible line
+   (its next sibling) red to signal "tap to remove". */
+.sh-graph-edge-hit:hover + .sh-graph-edge-line { stroke: #d03b3b !important; stroke-width: 2.5 !important; }
