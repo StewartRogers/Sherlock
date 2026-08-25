@@ -71,6 +71,24 @@ export function GraphIcon() {
   );
 }
 
+export function RequestIcon() {
+  return (
+    <svg {...box} fill="currentColor" aria-hidden="true">
+      <path opacity="0.35" d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+      <path d="M9 15.5l2 2 4.5-4.5-1.1-1.1L11 15.3l-.9-.9z" />
+    </svg>
+  );
+}
+
+export function UploadIcon() {
+  return (
+    <svg {...box} fill="currentColor" aria-hidden="true">
+      <path opacity="0.35" d="M4 16h2v3h12v-3h2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+      <path d="M11 4.6l-4.2 4.2 1.1 1.1L11 6.8V16h2V6.8l3.1 3.1 1.1-1.1z" />
+    </svg>
+  );
+}
+
 export function MoreIcon() {
   return (
     <svg {...box} fill="currentColor" aria-hidden="true">

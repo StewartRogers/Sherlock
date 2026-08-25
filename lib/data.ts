@@ -40,13 +40,16 @@ export const REPORT_DEFAULTS: ReportDoc[] = [
     noteEvidence: ["E-10", "E-11", "E-12", "E-13", "E-14", "REF-1"],
     orders: [
       {
-        text: "Fall protection was not in use at the leading edge of the roof. The evidence shows a worker pressure washing shingles within reach of an unprotected edge, with no anchor point, lanyard, or guardrail visible, and no barrier preventing access to the edge. This reads as a contravention of OHS Regulation 11.2(1)(a): an employment relationship with Rainshield Roofing, work performed at a height where a fall could cause injury, and the absence of an adequate fall protection system. Confirm each condition against the evidence below, then draft the order in WSM 360 with the specific distance to grade and roof pitch.",
+        text: "I observed a worker for Rainshield Roofing performing roofing work on a 4:12 sloped roof. The worker was not protected by a system of fall protection and was exposed to a fall hazard of approximately 23 feet above hard-packed ground with construction debris.\n\nThis is in contravention of the Occupational Health and Safety Regulation Section 11.2(1)(a).\n\nUnless elsewhere provided for in this Regulation, an employer must ensure that a fall protection system is used when work is being done at a place from which a fall of 3 m (10 ft) or more may occur.\n\nMeasures to Ensure Compliance:\nPrior to resuming work at heights, the employer must demonstrate a compliant fall protection system appropriate for the work to be performed.",
         evidence: ["E-10", "E-11", "E-12", "E-13", "E-14"],
       },
     ],
     refs: [
       {
-        text: "The site's first aid attendant certificate is due to expire shortly. No order follows from this on its own, but it's worth recording as a regulation reference and following up with the site representative before the certificate lapses.",
+        reference:
+          "OHS Regulation — First aid assessment\nAn employer must ensure that a worker holding a valid first aid certificate appropriate to the assessed first aid level is available at the workplace, and that the certification remains current.",
+        details:
+          "The site's designated first aid attendant certificate was reviewed and found to expire within the coming weeks. The site representative was advised to renew or replace the certification before it lapses, so the workplace remains covered by a currently certified attendant.",
         evidence: ["REF-1"],
       },
     ],
@@ -172,6 +175,19 @@ export function nearestJobsite(lat: number, lng: number): JobsiteLocation {
       ? site
       : closest,
   );
+}
+
+/** Formats a byte count for display next to an uploaded document. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let i = 0;
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024;
+    i++;
+  }
+  return `${value.toFixed(value < 10 ? 1 : 0)} ${units[i]}`;
 }
 
 /**

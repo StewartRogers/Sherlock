@@ -10,7 +10,9 @@ import { GraphTab } from "./GraphTab";
 import { MoreTab } from "./MoreTab";
 import { NotesTab } from "./NotesTab";
 import { ReportTab } from "./ReportTab";
+import { RequestsTab } from "./RequestsTab";
 import { ScanTab } from "./ScanTab";
+import { UploadTab } from "./UploadTab";
 import {
   BackIcon,
   CameraIcon,
@@ -19,7 +21,9 @@ import {
   MoreIcon,
   NoteIcon,
   ReportIcon,
+  RequestIcon,
   ScanIcon,
+  UploadIcon,
 } from "./icons";
 
 /**
@@ -29,7 +33,9 @@ import {
 const TABS: { tab: Tab; label: string; icon: ComponentType; wide?: boolean }[] = [
   { tab: "capture", label: "Capture", icon: CameraIcon },
   { tab: "notes", label: "Notes", icon: NoteIcon },
+  { tab: "requests", label: "Requests", icon: RequestIcon },
   { tab: "scan", label: "Scan", icon: ScanIcon },
+  { tab: "upload", label: "Upload", icon: UploadIcon },
   { tab: "case", label: "Case folder", icon: FolderIcon, wide: true },
   { tab: "report", label: "Report content", icon: ReportIcon, wide: true },
   { tab: "graph", label: "Knowledge graph", icon: GraphIcon, wide: true },
@@ -38,7 +44,9 @@ const TABS: { tab: Tab; label: string; icon: ComponentType; wide?: boolean }[] =
 const PANELS: Record<Tab, ComponentType> = {
   capture: CaptureTab,
   notes: NotesTab,
+  requests: RequestsTab,
   scan: ScanTab,
+  upload: UploadTab,
   more: MoreTab,
   case: CaseFolderTab,
   report: ReportTab,

@@ -25,6 +25,7 @@ import type {
   ScanPage,
   Screen,
   Tab,
+  UploadedDocument,
 } from "./types";
 
 interface SherlockState {
@@ -44,9 +45,9 @@ interface SherlockState {
   transcript: string;
   notes: Note[];
   draftNoteEmployers: string[];
-  draftNoteKind: NoteKind;
   editingNoteId: number | null;
   scanPages: ScanPage[];
+  documents: UploadedDocument[];
   /** Evidence code -> included in the report as a primary exhibit. */
   primaryMap: Record<string, boolean>;
   reportEmployer: string;
@@ -74,9 +75,9 @@ const INITIAL: SherlockState = {
   transcript: "",
   notes: [],
   draftNoteEmployers: [],
-  draftNoteKind: "note",
   editingNoteId: null,
   scanPages: [],
+  documents: [],
   primaryMap: { "E-10": true, "E-11": true },
   reportEmployer: "roofing",
   reportDocs: {},
@@ -163,6 +164,7 @@ function useSherlockState() {
           reportDocs: {},
           notes: [],
           editingNoteId: null,
+          documents: [],
         };
       }),
     [patch],
@@ -205,10 +207,6 @@ function useSherlockState() {
     (transcript: string) => patch(() => ({ transcript })),
     [patch],
   );
-  const setDraftKind = useCallback(
-    (draftNoteKind: NoteKind) => patch(() => ({ draftNoteKind })),
-    [patch],
-  );
   const toggleDraftNoteEmployer = useCallback(
     (id: string) =>
       patch((s) => ({
@@ -219,11 +217,10 @@ function useSherlockState() {
     [patch],
   );
   const saveNote = useCallback(
-    () =>
+    (kind: NoteKind) =>
       patch((s) => {
         const text = s.transcript.trim();
         if (!text) return null;
-        const kind = s.draftNoteKind;
         const seq = s.notes.filter((n) => n.kind === kind).length + 1;
         return {
           notes: [
@@ -294,6 +291,42 @@ function useSherlockState() {
     [patch],
   );
 
+  /* — upload — */
+  const addDocuments = useCallback(
+    (files: File[]) =>
+      patch((s) => {
+        if (!files.length) return null;
+        const added: UploadedDocument[] = files.map((f, i) => ({
+          id: Date.now() + i,
+          name: f.name,
+          size: f.size,
+          employers: [],
+        }));
+        return { documents: [...s.documents, ...added] };
+      }),
+    [patch],
+  );
+  const toggleDocumentEmployer = useCallback(
+    (id: number, empId: string) =>
+      patch((s) => ({
+        documents: s.documents.map((d) =>
+          d.id !== id
+            ? d
+            : {
+                ...d,
+                employers: d.employers.includes(empId)
+                  ? d.employers.filter((v) => v !== empId)
+                  : [...d.employers, empId],
+              },
+        ),
+      })),
+    [patch],
+  );
+  const removeDocument = useCallback(
+    (id: number) => patch((s) => ({ documents: s.documents.filter((d) => d.id !== id) })),
+    [patch],
+  );
+
   /* — report — */
   const setPrimary = useCallback(
     (code: string, val: boolean) =>
@@ -344,17 +377,29 @@ function useSherlockState() {
     (note: string) => updateDoc((d) => ({ ...d, note })),
     [updateDoc],
   );
-  const setListItem = useCallback(
-    (key: "orders" | "refs", i: number, v: string) =>
+  const setOrderText = useCallback(
+    (i: number, v: string) =>
       updateDoc((d) => ({
         ...d,
-        [key]: d[key].map((item, j) => (j === i ? { ...item, text: v } : item)),
+        orders: d.orders.map((item, j) => (j === i ? { ...item, text: v } : item)),
       })),
     [updateDoc],
   );
-  const addListItem = useCallback(
-    (key: "orders" | "refs") =>
-      updateDoc((d) => ({ ...d, [key]: [...d[key], { text: "", evidence: [] }] })),
+  const addOrder = useCallback(
+    () => updateDoc((d) => ({ ...d, orders: [...d.orders, { text: "", evidence: [] }] })),
+    [updateDoc],
+  );
+  const setRefField = useCallback(
+    (i: number, field: "reference" | "details", v: string) =>
+      updateDoc((d) => ({
+        ...d,
+        refs: d.refs.map((item, j) => (j === i ? { ...item, [field]: v } : item)),
+      })),
+    [updateDoc],
+  );
+  const addRef = useCallback(
+    () =>
+      updateDoc((d) => ({ ...d, refs: [...d.refs, { reference: "", details: "", evidence: [] }] })),
     [updateDoc],
   );
 
@@ -428,7 +473,6 @@ function useSherlockState() {
     applyTagsToUntagged,
     toggleRecord,
     setTranscript,
-    setDraftKind,
     toggleDraftNoteEmployer,
     saveNote,
     editNoteTags,
@@ -436,11 +480,16 @@ function useSherlockState() {
     setNoteKind,
     scanPage,
     setScanPageText,
+    addDocuments,
+    toggleDocumentEmployer,
+    removeDocument,
     setPrimary,
     setReportEmployer,
     setReportNote,
-    setListItem,
-    addListItem,
+    setOrderText,
+    addOrder,
+    setRefField,
+    addRef,
     selectGraphNode,
     addGraphLink,
     removeGraphLink,

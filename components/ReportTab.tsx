@@ -30,8 +30,10 @@ export function ReportTab() {
     reportDoc,
     setReportEmployer,
     setReportNote,
-    setListItem,
-    addListItem,
+    setOrderText,
+    addOrder,
+    setRefField,
+    addRef,
   } = useSherlock();
   const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
 
@@ -93,13 +95,13 @@ export function ReportTab() {
                 className="input"
                 rows={9}
                 value={item.text}
-                onChange={(e) => setListItem("orders", i, e.target.value)}
+                onChange={(e) => setOrderText(i, e.target.value)}
                 placeholder="Statement of the issue"
               />
               <EvidenceRow codes={item.evidence} onOpen={setViewing} />
             </div>
           ))}
-          <button type="button" className="btn btn-secondary" onClick={() => addListItem("orders")}>
+          <button type="button" className="btn btn-secondary" onClick={addOrder}>
             Add order
           </button>
         </div>
@@ -107,20 +109,38 @@ export function ReportTab() {
         <div style={{ marginTop: "var(--space-6)" }}>
           <div className="sh-kicker">Regulation references</div>
           {reportDoc.refs.map((item, i) => (
-            <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
-              <label htmlFor={`ref-${i}`}>Reference {i + 1}</label>
-              <textarea
-                id={`ref-${i}`}
-                className="input"
-                rows={4}
-                value={item.text}
-                onChange={(e) => setListItem("refs", i, e.target.value)}
-                placeholder="Regulation reference"
-              />
+            <div style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
+              <div className="sh-row-title" style={{ fontSize: 13, marginBottom: 6 }}>
+                Reference {i + 1}
+              </div>
+              <div className="sh-cols">
+                <div className="field">
+                  <label htmlFor={`ref-${i}-reference`}>Reference</label>
+                  <textarea
+                    id={`ref-${i}-reference`}
+                    className="input"
+                    rows={6}
+                    value={item.reference}
+                    onChange={(e) => setRefField(i, "reference", e.target.value)}
+                    placeholder="Citation and regulation text"
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`ref-${i}-details`}>Details discussed</label>
+                  <textarea
+                    id={`ref-${i}-details`}
+                    className="input"
+                    rows={6}
+                    value={item.details}
+                    onChange={(e) => setRefField(i, "details", e.target.value)}
+                    placeholder="What was discussed with the site representative"
+                  />
+                </div>
+              </div>
               <EvidenceRow codes={item.evidence} onOpen={setViewing} />
             </div>
           ))}
-          <button type="button" className="btn btn-secondary" onClick={() => addListItem("refs")}>
+          <button type="button" className="btn btn-secondary" onClick={addRef}>
             Add regulation reference
           </button>
         </div>

@@ -1,6 +1,15 @@
 export type Screen = "home" | "newcase" | "app";
 
-export type Tab = "capture" | "notes" | "scan" | "more" | "case" | "report" | "graph";
+export type Tab =
+  | "capture"
+  | "notes"
+  | "requests"
+  | "scan"
+  | "upload"
+  | "more"
+  | "case"
+  | "report"
+  | "graph";
 
 export type NoteKind = "note" | "request";
 
@@ -45,9 +54,16 @@ export interface Note {
   code: string;
 }
 
-/** A drafted order or regulation reference, with the evidence codes it was drawn from. */
+/** A drafted order, with the evidence codes it was drawn from. */
 export interface ReportItem {
   text: string;
+  evidence: string[];
+}
+
+/** A regulation reference, split into the citation/regulation text and what was discussed on site. */
+export interface RegRefItem {
+  reference: string;
+  details: string;
   evidence: string[];
 }
 
@@ -55,7 +71,7 @@ export interface ReportDoc {
   note: string;
   noteEvidence: string[];
   orders: ReportItem[];
-  refs: ReportItem[];
+  refs: RegRefItem[];
 }
 
 export interface RecentCase {
@@ -67,6 +83,13 @@ export interface JobsiteLocation {
   address: string;
   lat: number;
   lng: number;
+}
+
+export interface UploadedDocument {
+  id: number;
+  name: string;
+  size: number;
+  employers: string[];
 }
 
 export type GraphEdge = [string, string];
