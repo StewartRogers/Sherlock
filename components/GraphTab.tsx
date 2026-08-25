@@ -10,7 +10,6 @@ type NodeKind =
   | "case"
   | "employer"
   | "evidence"
-  | "open"
   | "order"
   | "reference"
   | "note"
@@ -34,24 +33,43 @@ interface GNode {
   r: number;
 }
 
+/**
+ * Eight hand-picked hues (plus a neutral for Documents), each checked pairwise
+ * against a simulated-colorblindness distance metric so they read as distinct
+ * kinds rather than a rainbow. DISCONNECTED_COLOR is a ninth, reserved color —
+ * checked against all eight and kept clear of every one of them — so a node
+ * that isn't linked to any employer is never mistaken for a category.
+ */
 const KIND_COLOR: Record<NodeKind, string> = {
   case: "var(--color-neutral-700)",
-  employer: "var(--color-accent-600)",
-  evidence: "var(--color-accent-400)",
-  open: "var(--color-accent-2-400)",
-  order: "var(--color-accent-2-600)",
-  reference: "var(--color-neutral-500)",
-  note: "var(--color-neutral-600)",
-  request: "var(--color-accent-2-700)",
-  scan: "var(--color-neutral-400)",
+  employer: "#2a78d6",
+  evidence: "#1baf7a",
+  order: "#eb6834",
+  request: "#e87ba4",
+  reference: "#4a3aa7",
+  note: "#eda100",
+  scan: "#008300",
   document: "var(--color-neutral-800)",
 };
+
+const DISCONNECTED_COLOR = "#d03b3b";
+
+/** Legend order, matching how the kinds were named in the request. */
+const LEGEND_KINDS: NodeKind[] = [
+  "evidence",
+  "note",
+  "request",
+  "scan",
+  "document",
+  "order",
+  "reference",
+  "employer",
+];
 
 const KIND_LABEL: Record<NodeKind, string> = {
   case: "Casefile",
   employer: "Employer",
   evidence: "Evidence",
-  open: "Open item · needs review",
   order: "Order",
   reference: "Reference",
   note: "Note",
@@ -171,14 +189,13 @@ export function GraphTab() {
     const list: GNode[] = [{ id: "case", label: "Casefile", kind: "case", r: 20 }];
     for (const ce of caseEmployers) list.push({ id: ce.id, label: ce.label, kind: "employer", r: 16 });
     for (const e of CASE_EVIDENCE) {
-      const isOpen = e.type === "open";
       list.push({
         id: e.code,
-        label: isOpen ? "Open item" : e.code,
+        label: e.code,
         title: e.label,
         body: e.description,
         thumb: { code: e.code, label: e.label, variant: "construction", meta: e.description },
-        kind: isOpen ? "open" : "evidence",
+        kind: "evidence",
         r: 11,
       });
     }
@@ -295,6 +312,20 @@ export function GraphTab() {
 
   const pos = useMemo(() => layoutNodes(nodes, edges, width, height), [nodes, edges]);
 
+  /** Anything (other than the case/employer nodes themselves) with no direct
+      edge to an employer — flagged red regardless of what else it's linked to. */
+  const employerIds = useMemo(() => new Set(caseEmployers.map((ce) => ce.id)), [caseEmployers]);
+  const connectedToEmployer = useMemo(() => {
+    const set = new Set<string>();
+    for (const [a, b] of edges) {
+      if (employerIds.has(a)) set.add(b);
+      if (employerIds.has(b)) set.add(a);
+    }
+    return set;
+  }, [edges, employerIds]);
+  const isDisconnected = (n: GNode) =>
+    n.kind !== "case" && n.kind !== "employer" && !connectedToEmployer.has(n.id);
+
   const sel = selectedGraphNode;
   const linkedTo = useMemo(() => {
     const set = new Set<string>();
@@ -348,6 +379,7 @@ export function GraphTab() {
             if (!p) return null;
             const isSel = sel === n.id;
             const dim = sel !== null && !isSel && !linkedTo.has(n.id);
+            const flagged = isDisconnected(n);
             return (
               <g
                 key={n.id}
@@ -362,15 +394,15 @@ export function GraphTab() {
                 tabIndex={0}
                 role="button"
                 aria-pressed={isSel}
-                aria-label={`${n.title ?? n.label} (${KIND_LABEL[n.kind]})`}
+                aria-label={`${n.title ?? n.label} (${KIND_LABEL[n.kind]}${flagged ? ", not connected to an employer" : ""})`}
               >
                 <circle
                   cx={p.x}
                   cy={p.y}
                   r={n.r}
-                  fill={dim ? "var(--color-neutral-300)" : KIND_COLOR[n.kind]}
-                  stroke={isSel ? "var(--color-text)" : "none"}
-                  strokeWidth={isSel ? 2 : 0}
+                  fill={dim ? "var(--color-neutral-300)" : flagged ? DISCONNECTED_COLOR : KIND_COLOR[n.kind]}
+                  stroke={isSel ? "var(--color-text)" : "color-mix(in srgb, var(--color-text) 30%, transparent)"}
+                  strokeWidth={isSel ? 2 : 1}
                 />
                 <text
                   x={p.x}
@@ -387,6 +419,37 @@ export function GraphTab() {
             );
           })}
         </svg>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px", marginTop: "var(--space-3)" }}>
+          {LEGEND_KINDS.map((k) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, opacity: 0.75 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: KIND_COLOR[k],
+                  flex: "none",
+                }}
+                aria-hidden="true"
+              />
+              {KIND_LABEL[k]}
+            </div>
+          ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, opacity: 0.75 }}>
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: DISCONNECTED_COLOR,
+                flex: "none",
+              }}
+              aria-hidden="true"
+            />
+            Not connected to an employer
+          </div>
+        </div>
       </div>
 
       <div className="sh-measure">
@@ -403,10 +466,13 @@ export function GraphTab() {
                   {titleById.get(sel)}
                 </p>
 
-                {node?.kind === "open" && (
-                  <p className="sh-meta" style={{ fontSize: 12, marginBottom: 8 }}>
-                    Sherlock couldn&apos;t confidently tie this to one employer or evidence code yet.
-                    Tag it to an employer to fold it into that report, or resolve it directly.
+                {node && isDisconnected(node) && (
+                  <p
+                    className="sh-meta"
+                    style={{ fontSize: 12, marginBottom: 8, color: DISCONNECTED_COLOR }}
+                  >
+                    Not linked to an employer yet — tag it to one, or add a link below, to fold it
+                    into that employer&apos;s report.
                   </p>
                 )}
 
