@@ -311,7 +311,10 @@ textarea.input { min-height: 90px; resize: vertical; }
 @container (min-width: 720px) {
   .sh-title { font-size: 28px; }
   .sh-pad { padding: var(--space-6); }
-  .sh-measure { max-width: 660px; }
+  /* Grows with the available width past the 720px breakpoint instead of
+     staying pinned at 660px, so wide tablets and desktop monitors aren't
+     left with most of the screen empty; still capped for line length. */
+  .sh-measure { max-width: clamp(660px, 78cqi, 1100px); }
   .sh-tab { flex: none; padding: 11px 22px; }
   .sh-tab-label { font-size: 13px; }
   .sh-wide { display: flex; }
