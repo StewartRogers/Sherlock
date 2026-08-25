@@ -417,6 +417,10 @@ function useSherlockState() {
       patch((s) => ({ selectedGraphNode: s.selectedGraphNode === id ? null : id })),
     [patch],
   );
+  const clearGraphSelection = useCallback(
+    () => patch(() => ({ selectedGraphNode: null })),
+    [patch],
+  );
   const addGraphLink = useCallback(
     (a: string, b: string) =>
       patch((s) => {
@@ -499,6 +503,7 @@ function useSherlockState() {
     setRefField,
     addRef,
     selectGraphNode,
+    clearGraphSelection,
     addGraphLink,
     removeGraphLink,
   };

@@ -59,7 +59,7 @@ An inspector opens a casefile and works through six sections:
 | **Scan** | Multi-page document scanning with a running notes field. |
 | **Case folder** | Every piece of evidence with its employer and type tags — Order, Reference, Request, or Open · needs review — plus primary/secondary exhibit ranking. |
 | **Report content** | One report per employer: inspection note, orders, and regulation references, each editable and extendable. |
-| **Knowledge graph** | An SVG node-link view of Casefile → Employers → Evidence. Selecting a node traces its connections and dims the rest. |
+| **Evidence graph** | An SVG node-link view of Casefile → Employers → Evidence. Selecting a node traces its connections and lightens the rest; anything with no path to an employer is flagged red. |
 
 Below a container width of 720px the last three collapse behind a **More** tab, matching the
 phone layout in the design.

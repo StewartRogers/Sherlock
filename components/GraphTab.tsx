@@ -163,6 +163,13 @@ function layoutNodes(nodes: GNode[], edges: GraphEdge[], width: number, height: 
   return pos;
 }
 
+/** A short, real label for evidence that hasn't been assigned an exhibit code yet. */
+function shortLabel(text: string, maxWords = 5): string {
+  const clause = text.split(",")[0].trim();
+  const words = clause.split(/\s+/);
+  return words.length <= maxWords ? clause : words.slice(0, maxWords).join(" ") + "…";
+}
+
 export function GraphTab() {
   const {
     caseEmployers,
@@ -176,6 +183,7 @@ export function GraphTab() {
     removedGraphLinks,
     selectedGraphNode,
     selectGraphNode,
+    clearGraphSelection,
     addGraphLink,
     removeGraphLink,
   } = useSherlock();
@@ -191,7 +199,7 @@ export function GraphTab() {
     for (const e of CASE_EVIDENCE) {
       list.push({
         id: e.code,
-        label: e.code,
+        label: e.code === "—" ? shortLabel(e.label) : e.code,
         title: e.label,
         body: e.description,
         thumb: { code: e.code, label: e.label, variant: "construction", meta: e.description },
@@ -312,19 +320,32 @@ export function GraphTab() {
 
   const pos = useMemo(() => layoutNodes(nodes, edges, width, height), [nodes, edges]);
 
-  /** Anything (other than the case/employer nodes themselves) with no direct
-      edge to an employer — flagged red regardless of what else it's linked to. */
+  /** Anything (other than the case/employer nodes themselves) with no path —
+      direct or via a chain of other links, e.g. evidence -> order -> employer —
+      to an employer. Only truly stranded artifacts get flagged; a note linked
+      only to another note, never reaching an employer, still counts as stranded. */
   const employerIds = useMemo(() => new Set(caseEmployers.map((ce) => ce.id)), [caseEmployers]);
-  const connectedToEmployer = useMemo(() => {
-    const set = new Set<string>();
+  const reachesEmployer = useMemo(() => {
+    const adjacent = new Map<string, string[]>();
     for (const [a, b] of edges) {
-      if (employerIds.has(a)) set.add(b);
-      if (employerIds.has(b)) set.add(a);
+      (adjacent.get(a) ?? adjacent.set(a, []).get(a)!).push(b);
+      (adjacent.get(b) ?? adjacent.set(b, []).get(b)!).push(a);
     }
-    return set;
+    const seen = new Set<string>(employerIds);
+    const queue = [...employerIds];
+    while (queue.length) {
+      const cur = queue.shift()!;
+      for (const next of adjacent.get(cur) ?? []) {
+        if (!seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    return seen;
   }, [edges, employerIds]);
   const isDisconnected = (n: GNode) =>
-    n.kind !== "case" && n.kind !== "employer" && !connectedToEmployer.has(n.id);
+    n.kind !== "case" && n.kind !== "employer" && !reachesEmployer.has(n.id);
 
   const sel = selectedGraphNode;
   const linkedTo = useMemo(() => {
@@ -342,19 +363,20 @@ export function GraphTab() {
   );
 
   return (
-    <div className="sh-cols">
+    <div className="sh-cols" onClick={clearGraphSelection}>
       <div className="sh-measure">
-        <h2 className="sh-title">Knowledge graph</h2>
+        <h2 className="sh-title">Evidence graph</h2>
         <p className="sh-meta">
-          Tap a node to trace what it connects to and edit its links. Editing links changes
-          connections only — the evidence underneath stays exactly as captured.
+          Tap a node to trace what it connects to and edit its links. Tap empty space to
+          deselect. Editing links changes connections only — the evidence underneath stays
+          exactly as captured.
         </p>
 
         <svg
           viewBox={`0 0 ${width} ${height}`}
           style={{ width: "100%", height: "auto", maxHeight: 460, marginTop: "var(--space-4)" }}
           role="group"
-          aria-label="Casefile knowledge graph"
+          aria-label="Casefile evidence graph"
         >
           {edges.map(([a, b]) => {
             const pa = pos.get(a);
@@ -380,13 +402,18 @@ export function GraphTab() {
             const isSel = sel === n.id;
             const dim = sel !== null && !isSel && !linkedTo.has(n.id);
             const flagged = isDisconnected(n);
+            const baseColor = flagged ? DISCONNECTED_COLOR : KIND_COLOR[n.kind];
             return (
               <g
                 key={n.id}
-                onClick={() => selectGraphNode(n.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectGraphNode(n.id);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
+                    e.stopPropagation();
                     selectGraphNode(n.id);
                   }
                 }}
@@ -400,7 +427,7 @@ export function GraphTab() {
                   cx={p.x}
                   cy={p.y}
                   r={n.r}
-                  fill={dim ? "var(--color-neutral-300)" : flagged ? DISCONNECTED_COLOR : KIND_COLOR[n.kind]}
+                  fill={dim ? `color-mix(in srgb, ${baseColor} 35%, white)` : baseColor}
                   stroke={isSel ? "var(--color-text)" : "color-mix(in srgb, var(--color-text) 30%, transparent)"}
                   strokeWidth={isSel ? 2 : 1}
                 />
@@ -457,7 +484,7 @@ export function GraphTab() {
           (() => {
             const node = nodeById.get(sel);
             return (
-              <div className="card elev-md">
+              <div className="card elev-md" onClick={(e) => e.stopPropagation()}>
                 <div className="card-kicker">{KIND_LABEL[kindById.get(sel) ?? "evidence"]}</div>
                 <p
                   className="card-body"

@@ -6,7 +6,7 @@ import type { Tab } from "@/lib/types";
 const ENTRIES: { tab: Tab; title: string; meta: string }[] = [
   { tab: "case", title: "Case folder", meta: "Every piece of evidence in this casefile" },
   { tab: "report", title: "Report content", meta: "Orders, regulation references, and IR notes" },
-  { tab: "graph", title: "Knowledge graph", meta: "How the evidence connects together" },
+  { tab: "graph", title: "Evidence graph", meta: "How the evidence connects together" },
 ];
 
 export function MoreTab() {

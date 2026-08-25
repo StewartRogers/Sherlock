@@ -27,7 +27,7 @@ import {
 } from "./icons";
 
 /**
- * The narrow layout collapses Case folder / Report / Knowledge graph behind
+ * The narrow layout collapses Case folder / Report / Evidence graph behind
  * "More"; at container width 720px and up they get their own tabs.
  */
 const TABS: { tab: Tab; label: string; icon: ComponentType; wide?: boolean }[] = [
@@ -38,7 +38,7 @@ const TABS: { tab: Tab; label: string; icon: ComponentType; wide?: boolean }[] =
   { tab: "upload", label: "Upload", icon: UploadIcon },
   { tab: "case", label: "Case folder", icon: FolderIcon, wide: true },
   { tab: "report", label: "Report content", icon: ReportIcon, wide: true },
-  { tab: "graph", label: "Knowledge graph", icon: GraphIcon, wide: true },
+  { tab: "graph", label: "Evidence graph", icon: GraphIcon, wide: true },
 ];
 
 const PANELS: Record<Tab, ComponentType> = {
