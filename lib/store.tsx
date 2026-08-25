@@ -150,14 +150,22 @@ function useSherlockState() {
   const startInspection = useCallback(
     () =>
       patch((s) => {
-        const employers: Employer[] = s.newCaseEmployers.length
-          ? s.newCaseEmployers.map((label, i) => ({ id: `emp${i}`, label }))
+        /* Carry over a name still sitting in the employer-name field —
+           typed but not committed with Add or Enter — instead of silently
+           dropping it and falling back to the default employers. */
+        const pending = s.newEmployerText.trim();
+        const names = pending ? [...s.newCaseEmployers, pending] : s.newCaseEmployers;
+        const employers: Employer[] = names.length
+          ? names.map((label, i) => ({ id: `emp${i}`, label }))
           : DEFAULT_EMPLOYERS;
         return {
           screen: "app",
           tab: "capture",
           caseEmployers: employers,
           caseAddress: s.newCaseAddress.trim() || NEW_CASE_STAMP.address,
+          newCaseEmployers: [],
+          newEmployerText: "",
+          newCaseAddress: "",
           captureEmployer: {},
           captureStep: 0,
           reportEmployer: employers[0].id,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CASE_EVIDENCE, NEW_CASE_STAMP, TYPE_TAG } from "@/lib/data";
+import { CASE_EVIDENCE, fileExtLabel, formatBytes, NEW_CASE_STAMP, TYPE_TAG } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import type { Employer, Note } from "@/lib/types";
 import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
@@ -24,7 +24,7 @@ function truncateWords(text: string, n: number): { shown: string; isLong: boolea
   return { shown: words.slice(0, n).join(" ") + "…", isLong: true };
 }
 
-type SectionKey = "photos" | "notes" | "requests" | "scans";
+type SectionKey = "photos" | "notes" | "requests" | "scans" | "documents";
 
 function NoteRows({
   items,
@@ -81,6 +81,7 @@ export function CaseFolderTab() {
     captureStep,
     notes,
     scanPages,
+    documents,
     primaryMap,
     employerForSlot,
     setPrimary,
@@ -91,6 +92,7 @@ export function CaseFolderTab() {
     notes: true,
     requests: true,
     scans: true,
+    documents: true,
   });
   const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
@@ -142,6 +144,10 @@ export function CaseFolderTab() {
         <div>
           <div className="sh-stat-num">{noteCount}</div>
           <div className="sh-stat-label">Notes</div>
+        </div>
+        <div>
+          <div className="sh-stat-num">{documents.length}</div>
+          <div className="sh-stat-label">Documents</div>
         </div>
         <div>
           <div className="sh-stat-num" style={{ color: "var(--color-accent-2)" }}>
@@ -225,6 +231,60 @@ export function CaseFolderTab() {
                   </div>
                 </div>
               ))}
+            </div>
+          ))}
+      </div>
+
+      {/* — Uploaded documents — */}
+      <div className="sh-section">
+        <button
+          type="button"
+          className="sh-collapse-head"
+          aria-expanded={open.documents}
+          onClick={() => toggleSection("documents")}
+        >
+          <span className="sh-kicker" style={{ margin: 0 }}>
+            Documents · {documents.length}
+          </span>
+          <ChevronIcon />
+        </button>
+        {open.documents &&
+          (documents.length === 0 ? (
+            <p className="sh-meta">No documents uploaded yet.</p>
+          ) : (
+            <div className="sh-list">
+              {documents.map((d) => {
+                const employerLabels = d.employers.length
+                  ? d.employers
+                      .map((id) => caseEmployers.find((ce) => ce.id === id)?.label)
+                      .filter(Boolean)
+                      .join(", ")
+                  : "Unassigned";
+                return (
+                  <div
+                    className="sh-row"
+                    style={{ alignItems: "flex-start", gap: "var(--space-3)" }}
+                    key={d.id}
+                  >
+                    <EvidenceThumb
+                      size={80}
+                      item={{ code: fileExtLabel(d.name), label: d.name, variant: "placeholder", meta: formatBytes(d.size) }}
+                      onOpen={setViewing}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        className="sh-row-title"
+                        style={{ fontSize: 14, marginBottom: 4, overflowWrap: "break-word" }}
+                      >
+                        {d.name}
+                      </div>
+                      <p className="sh-meta" style={{ fontSize: 13, margin: 0 }}>
+                        {formatBytes(d.size)} · {employerLabels}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ))}
       </div>
