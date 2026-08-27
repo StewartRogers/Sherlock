@@ -7,12 +7,18 @@
 import { CASE_EVIDENCE, formatBytes, TYPE_TAG } from "./data";
 import type { ChatCounts, Employer, EmployerSlot, Note, ReportDoc, ScanPage, UploadedDocument } from "./types";
 
-export interface ChatContext {
-  caseEmployers: Employer[];
+/** Everything collectSearchableItems() needs — a subset of ChatContext, so
+ *  callers that don't have a full chat context (e.g. the casefile list) can
+ *  still search this same text pool. */
+export interface SearchContext {
   notes: Note[];
   scanPages: ScanPage[];
   documents: UploadedDocument[];
   reportByEmployer: { employer: Employer; doc: ReportDoc }[];
+}
+
+export interface ChatContext extends SearchContext {
+  caseEmployers: Employer[];
   employerForSlot: (slot: EmployerSlot | null) => Employer | null;
   counts: ChatCounts;
 }
@@ -169,10 +175,52 @@ function answerRequests(ctx: ChatContext): ChatAnswer {
   return { text: `${plural(requests.length, "request")} logged:\n${lines.join("\n")}`, sources: requests.map((r) => r.code) };
 }
 
-interface Hit {
+export interface SearchableItem {
   code: string;
   label: string;
   text: string;
+}
+
+/**
+ * Every piece of free text in the casefile that's worth searching: evidence
+ * captions, notes/requests, scanned pages, document names, and each
+ * employer's inspection note, orders, and regulation references. Shared by
+ * the chat's keyword search and the casefile list's full-text search.
+ */
+export function collectSearchableItems(ctx: SearchContext): SearchableItem[] {
+  const items: SearchableItem[] = [];
+  for (const e of CASE_EVIDENCE) {
+    items.push({ code: e.code, label: e.label, text: `${e.label} ${e.description}` });
+  }
+  for (const n of ctx.notes) {
+    items.push({ code: n.code, label: n.kind === "request" ? "Request" : "Note", text: n.text });
+  }
+  for (const p of ctx.scanPages) {
+    items.push({ code: `SN-${p.id}`, label: "Scanned page", text: p.text });
+  }
+  for (const d of ctx.documents) {
+    items.push({ code: d.code, label: "Document", text: d.name });
+  }
+  for (const { employer, doc } of ctx.reportByEmployer) {
+    items.push({ code: employer.id, label: `Inspection note (${employer.label})`, text: doc.note });
+    for (const o of doc.orders) {
+      items.push({ code: o.code, label: `Order (${employer.label})`, text: o.text });
+    }
+    for (const r of doc.refs) {
+      items.push({ code: r.code, label: `Reference (${employer.label})`, text: `${r.reference} ${r.details}` });
+    }
+  }
+  return items;
+}
+
+/** Whether any searchable text in the casefile contains the given phrase. */
+export function caseContentMatches(query: string, ctx: SearchContext): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return false;
+  return collectSearchableItems(ctx).some((it) => it.text.toLowerCase().includes(q));
+}
+
+interface Hit extends SearchableItem {
   score: number;
 }
 
@@ -185,37 +233,9 @@ function answerKeywordSearch(query: string, ctx: ChatContext): ChatAnswer {
     return terms.reduce((n, t) => n + (h.includes(t) ? 1 : 0), 0);
   }
 
-  const hits: Hit[] = [];
-  for (const e of CASE_EVIDENCE) {
-    const s = score(`${e.label} ${e.description}`);
-    if (s > 0) hits.push({ code: e.code, label: e.label, text: e.description, score: s });
-  }
-  for (const n of ctx.notes) {
-    const s = score(n.text);
-    if (s > 0) hits.push({ code: n.code, label: n.kind === "request" ? "Request" : "Note", text: n.text, score: s });
-  }
-  for (const p of ctx.scanPages) {
-    const s = score(p.text);
-    if (s > 0) hits.push({ code: `SN-${p.id}`, label: "Scanned page", text: p.text, score: s });
-  }
-  for (const d of ctx.documents) {
-    const s = score(d.name);
-    if (s > 0) hits.push({ code: d.code, label: "Document", text: d.name, score: s });
-  }
-  for (const { employer, doc } of ctx.reportByEmployer) {
-    const noteScore = score(doc.note);
-    if (noteScore > 0) {
-      hits.push({ code: employer.id, label: `Inspection note (${employer.label})`, text: doc.note, score: noteScore });
-    }
-    for (const o of doc.orders) {
-      const s = score(o.text);
-      if (s > 0) hits.push({ code: o.code, label: `Order (${employer.label})`, text: o.text, score: s });
-    }
-    for (const r of doc.refs) {
-      const s = score(`${r.reference} ${r.details}`);
-      if (s > 0) hits.push({ code: r.code, label: `Reference (${employer.label})`, text: `${r.reference} ${r.details}`, score: s });
-    }
-  }
+  const hits: Hit[] = collectSearchableItems(ctx)
+    .map((item) => ({ ...item, score: score(item.text) }))
+    .filter((hit) => hit.score > 0);
 
   if (hits.length === 0) {
     return {

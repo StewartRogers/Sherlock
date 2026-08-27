@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { caseContentMatches } from "@/lib/chat";
 import {
   caseMeta,
   caseMonth,
@@ -140,7 +141,18 @@ function EmployerCombobox({
 }
 
 export function AllCasesScreen() {
-  const { recentCases, openCase, backHome } = useSherlock();
+  const {
+    recentCases,
+    openCase,
+    backHome,
+    activeCaseId,
+    caseEmployers,
+    notes,
+    scanPages,
+    documents,
+    reportDocs,
+    defaultDoc,
+  } = useSherlock();
   const [keyword, setKeyword] = useState("");
   const [employerQuery, setEmployerQuery] = useState("");
   const [drill, setDrill] = useState<DateDrill>(ALL_DATES);
@@ -155,6 +167,24 @@ export function AllCasesScreen() {
     [recentCases],
   );
 
+  /** The one casefile with real evidence/notes/report content behind it this
+   *  session — everything else is a name/address/employer card only. Falls
+   *  back to the seeded Meridian Townhomes casefile the demo content is
+   *  authored against, before anything has been opened. */
+  const liveCaseId = activeCaseId ?? "seed-1";
+  const searchCtx = useMemo(
+    () => ({
+      notes,
+      scanPages,
+      documents,
+      reportByEmployer: caseEmployers.map((employer) => ({
+        employer,
+        doc: reportDocs[employer.id] ?? defaultDoc(employer.id, caseEmployers),
+      })),
+    }),
+    [notes, scanPages, documents, caseEmployers, reportDocs, defaultDoc],
+  );
+
   const kw = keyword.trim().toLowerCase();
   const empQ = employerQuery.trim().toLowerCase();
 
@@ -162,7 +192,9 @@ export function AllCasesScreen() {
     if (empQ && !rc.employers.some((e) => e.toLowerCase().includes(empQ))) return false;
     if (kw) {
       const haystack = [rc.name, rc.address, ...rc.employers].join(" ").toLowerCase();
-      if (!haystack.includes(kw)) return false;
+      const matchesShallow = haystack.includes(kw);
+      const matchesContent = rc.id === liveCaseId && caseContentMatches(kw, searchCtx);
+      if (!matchesShallow && !matchesContent) return false;
     }
     return true;
   });
@@ -227,10 +259,14 @@ export function AllCasesScreen() {
               id="case-search"
               type="search"
               className="input"
-              placeholder="Search by name, address, or employer"
+              placeholder="Search names, addresses, employers, or case content"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
             />
+            <div style={{ fontSize: 12, opacity: 0.55, marginTop: 6 }}>
+              Also searches evidence, notes, and report content — but only for the casefile you
+              have open this session; the rest are name/address/employer cards only.
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
