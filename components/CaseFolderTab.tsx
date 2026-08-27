@@ -12,7 +12,7 @@ import {
 } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import type { Employer, Note } from "@/lib/types";
-import { ChatPanel } from "./ChatPanel";
+import { ChatOverlay } from "./ChatOverlay";
 import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
 
 function ChevronIcon() {
@@ -29,7 +29,7 @@ function truncateWords(text: string, n: number): { shown: string; isLong: boolea
   return { shown: words.slice(0, n).join(" ") + "…", isLong: true };
 }
 
-type SectionKey = "chat" | "photos" | "notes" | "requests" | "scans" | "documents";
+type SectionKey = "photos" | "notes" | "requests" | "scans" | "documents";
 
 function NoteRows({
   items,
@@ -99,7 +99,6 @@ export function CaseFolderTab() {
   } = useSherlock();
 
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({
-    chat: true,
     photos: true,
     notes: true,
     requests: true,
@@ -206,24 +205,6 @@ export function CaseFolderTab() {
           <div className="sh-stat-num">{documents.length}</div>
           <div className="sh-stat-label">Documents</div>
         </div>
-      </div>
-
-      {/* — Chat with your data — */}
-      <div className="sh-section">
-        <button
-          type="button"
-          className="sh-collapse-head"
-          aria-expanded={open.chat}
-          onClick={() => toggleSection("chat")}
-        >
-          <span className="sh-kicker" style={{ margin: 0 }}>
-            Chat with your data
-          </span>
-          <ChevronIcon />
-        </button>
-        {open.chat && (
-          <ChatPanel messages={chatMessages} onAsk={sendChatQuestion} onSourceClick={handleSourceClick} />
-        )}
       </div>
 
       {/* — Photos — */}
@@ -450,6 +431,8 @@ export function CaseFolderTab() {
           </>
         )}
       </EvidenceViewerOverlay>
+
+      <ChatOverlay messages={chatMessages} onAsk={sendChatQuestion} onSourceClick={handleSourceClick} />
     </div>
   );
 }

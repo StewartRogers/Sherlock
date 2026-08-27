@@ -28,9 +28,9 @@ export function ChatPanel({
   }
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
       {messages.length === 0 ? (
-        <div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
           <p className="sh-meta">
             Ask about this casefile&rsquo;s evidence, notes, employers, or report content.
           </p>
@@ -46,7 +46,7 @@ export function ChatPanel({
         <div
           ref={listRef}
           className="sh-list"
-          style={{ maxHeight: 360, overflowY: "auto", paddingRight: 2 }}
+          style={{ flex: 1, overflowY: "auto", paddingRight: 2, minHeight: 120 }}
         >
           {messages.map((m) => (
             <div
@@ -94,7 +94,7 @@ export function ChatPanel({
       )}
 
       <form
-        style={{ display: "flex", gap: 6, marginTop: "var(--space-3)" }}
+        style={{ display: "flex", gap: 6, marginTop: "var(--space-3)", flex: "none" }}
         onSubmit={(e) => {
           e.preventDefault();
           ask(draft);

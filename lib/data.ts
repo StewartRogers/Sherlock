@@ -208,6 +208,11 @@ const MONTH_ABBR = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
+export const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 /** Formats a RecentCase's ISO date (YYYY-MM-DD) as e.g. "Aug 18, 2026". */
 export function formatCaseDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -217,6 +222,29 @@ export function formatCaseDate(iso: string): string {
 /** The address · date line shown under a casefile's name. */
 export function caseMeta(rc: RecentCase): string {
   return `${rc.address} · ${formatCaseDate(rc.date)}`;
+}
+
+export function caseYear(iso: string): number {
+  return Number(iso.slice(0, 4));
+}
+
+/** 1-12. */
+export function caseMonth(iso: string): number {
+  return Number(iso.slice(5, 7));
+}
+
+/** The Monday that starts the ISO week containing this date, as YYYY-MM-DD. */
+export function weekStartOf(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const day = date.getUTCDay();
+  date.setUTCDate(date.getUTCDate() - ((day + 6) % 7));
+  return date.toISOString().slice(0, 10);
+}
+
+/** "Week of Aug 17, 2026" label for a Monday-start week key from weekStartOf(). */
+export function weekLabel(weekStartIso: string): string {
+  return `Week of ${formatCaseDate(weekStartIso)}`;
 }
 
 /**
