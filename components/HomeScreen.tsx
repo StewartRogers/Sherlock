@@ -1,11 +1,12 @@
 "use client";
 
+import { CASES_PER_PAGE, caseMeta } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import { PlusIcon } from "./icons";
 
 export function HomeScreen() {
-  const { recentCases, visibleCases, goNewCase, openCase, showMoreCases } = useSherlock();
-  const shown = recentCases.slice(0, visibleCases);
+  const { recentCases, goNewCase, openCase, viewAllCases } = useSherlock();
+  const shown = recentCases.slice(0, CASES_PER_PAGE);
 
   return (
     <div className="sh-pad" style={{ flex: 1, overflowY: "auto" }}>
@@ -38,7 +39,7 @@ export function HomeScreen() {
               <div className="sh-row" key={rc.id}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="sh-row-title">{rc.name}</div>
-                  <div className="sh-row-meta">{rc.meta}</div>
+                  <div className="sh-row-meta">{caseMeta(rc)}</div>
                 </div>
                 <button
                   type="button"
@@ -52,14 +53,14 @@ export function HomeScreen() {
               </div>
             ))}
           </div>
-          {visibleCases < recentCases.length && (
+          {recentCases.length > CASES_PER_PAGE && (
             <button
               type="button"
               className="btn btn-ghost btn-block"
-              onClick={showMoreCases}
+              onClick={viewAllCases}
               style={{ marginTop: "var(--space-3)" }}
             >
-              See more
+              See all casefiles
             </button>
           )}
         </div>

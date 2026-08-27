@@ -139,13 +139,55 @@ export const TYPE_TAG: Record<EvidenceType, { label: string; cls: string }> = {
 };
 
 export const RECENT_CASES: RecentCase[] = [
-  { id: "seed-1", name: "Meridian Townhomes", meta: "1450 Meridian Rd, Coquitlam · Aug 18, 2026" },
-  { id: "seed-2", name: "Harbourview Apartments", meta: "220 Harbour St, New Westminster · Aug 12, 2026" },
-  { id: "seed-3", name: "Cascade Industrial Park", meta: "90 Cascade Way, Abbotsford · Aug 7, 2026" },
-  { id: "seed-4", name: "Northgate Retail Fitout", meta: "5600 Northgate Dr, Surrey · Jul 30, 2026" },
-  { id: "seed-5", name: "Elmwood Care Facility", meta: "870 Elmwood Ave, Burnaby · Jul 22, 2026" },
-  { id: "seed-6", name: "Riverbend Bridge Repair", meta: "12 Riverbend Rd, Maple Ridge · Jul 15, 2026" },
-  { id: "seed-7", name: "Sunridge Warehouse", meta: "340 Sunridge Blvd, Delta · Jul 9, 2026" },
+  {
+    id: "seed-1",
+    name: "Meridian Townhomes",
+    address: "1450 Meridian Rd, Coquitlam",
+    date: "2026-08-18",
+    employers: ["Rainshield Roofing", "Meridian Construction"],
+  },
+  {
+    id: "seed-2",
+    name: "Harbourview Apartments",
+    address: "220 Harbour St, New Westminster",
+    date: "2026-08-12",
+    employers: ["Harbourview Construction", "Coastal Electrical"],
+  },
+  {
+    id: "seed-3",
+    name: "Cascade Industrial Park",
+    address: "90 Cascade Way, Abbotsford",
+    date: "2026-08-07",
+    employers: ["Cascade Builders", "Pinecrest Roofing"],
+  },
+  {
+    id: "seed-4",
+    name: "Northgate Retail Fitout",
+    address: "5600 Northgate Dr, Surrey",
+    date: "2026-07-30",
+    employers: ["Northgate Interiors", "Apex Electrical"],
+  },
+  {
+    id: "seed-5",
+    name: "Elmwood Care Facility",
+    address: "870 Elmwood Ave, Burnaby",
+    date: "2026-07-22",
+    employers: ["Elmwood Construction", "Summit Mechanical"],
+  },
+  {
+    id: "seed-6",
+    name: "Riverbend Bridge Repair",
+    address: "12 Riverbend Rd, Maple Ridge",
+    date: "2026-07-15",
+    employers: ["Riverbend Contracting"],
+  },
+  {
+    id: "seed-7",
+    name: "Sunridge Warehouse",
+    address: "340 Sunridge Blvd, Delta",
+    date: "2026-07-09",
+    employers: ["Sunridge Logistics", "Delta Steel"],
+  },
 ];
 
 export const CASES_PER_PAGE = 5;
@@ -153,8 +195,25 @@ export const CASES_PER_PAGE = 5;
 /** Stamped onto a new casefile in place of a real geolocation + clock read. */
 export const NEW_CASE_STAMP = {
   address: "1450 Meridian Rd, Coquitlam",
+  date: "2026-08-18",
   timestamp: "Aug 18, 2026 · 9:14 a.m.",
 };
+
+const MONTH_ABBR = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/** Formats a RecentCase's ISO date (YYYY-MM-DD) as e.g. "Aug 18, 2026". */
+export function formatCaseDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${MONTH_ABBR[(m ?? 1) - 1]} ${d}, ${y}`;
+}
+
+/** The address · date line shown under a casefile's name. */
+export function caseMeta(rc: RecentCase): string {
+  return `${rc.address} · ${formatCaseDate(rc.date)}`;
+}
 
 /**
  * Known jobsites Sherlock can match a device's coordinates against, standing

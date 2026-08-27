@@ -1,5 +1,6 @@
 "use client";
 
+import { AllCasesScreen } from "@/components/AllCasesScreen";
 import { AppScreen } from "@/components/AppScreen";
 import { HomeScreen } from "@/components/HomeScreen";
 import { NewCaseScreen } from "@/components/NewCaseScreen";
@@ -21,6 +22,7 @@ function Sherlock() {
       }}
     >
       {screen === "home" && <HomeScreen />}
+      {screen === "cases" && <AllCasesScreen />}
       {screen === "newcase" && <NewCaseScreen />}
       {screen === "app" && <AppScreen />}
     </div>

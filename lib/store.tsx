@@ -32,7 +32,6 @@ import type {
 
 interface SherlockState {
   screen: Screen;
-  visibleCases: number;
   recentCases: RecentCase[];
   /** The recent-case entry, if any, that's the live casefile currently in memory. */
   activeCaseId: string | null;
@@ -66,7 +65,6 @@ interface SherlockState {
 
 const INITIAL: SherlockState = {
   screen: "home",
-  visibleCases: 5,
   recentCases: RECENT_CASES,
   activeCaseId: null,
   tab: "capture",
@@ -113,10 +111,7 @@ function useSherlockState() {
   /* — navigation — */
   const goNewCase = useCallback(() => patch(() => ({ screen: "newcase" })), [patch]);
   const backHome = useCallback(() => patch(() => ({ screen: "home" })), [patch]);
-  const showMoreCases = useCallback(
-    () => patch((s) => ({ visibleCases: s.visibleCases + 5 })),
-    [patch],
-  );
+  const viewAllCases = useCallback(() => patch(() => ({ screen: "cases" })), [patch]);
   const setTab = useCallback((tab: Tab) => patch(() => ({ tab })), [patch]);
 
   /** Cards for casefiles started this session resume the live in-memory data;
@@ -172,7 +167,9 @@ function useSherlockState() {
         const entry: RecentCase = {
           id: caseId,
           name: employers[0].label,
-          meta: `${address} · ${NEW_CASE_STAMP.timestamp.split(" · ")[0]}`,
+          address,
+          date: NEW_CASE_STAMP.date,
+          employers: employers.map((e) => e.label),
         };
         return {
           screen: "app",
@@ -527,7 +524,7 @@ function useSherlockState() {
     employerForSlot,
     goNewCase,
     backHome,
-    showMoreCases,
+    viewAllCases,
     setTab,
     openCase,
     setNewEmployerText,

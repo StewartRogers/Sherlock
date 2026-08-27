@@ -1,4 +1,4 @@
-export type Screen = "home" | "newcase" | "app";
+export type Screen = "home" | "cases" | "newcase" | "app";
 
 export type Tab =
   | "capture"
@@ -79,7 +79,11 @@ export interface ReportDoc {
 export interface RecentCase {
   id: string;
   name: string;
-  meta: string;
+  address: string;
+  /** ISO date (YYYY-MM-DD) the casefile was opened. */
+  date: string;
+  /** Employer names on this casefile, for the "search by employer" filter. */
+  employers: string[];
 }
 
 export interface JobsiteLocation {
