@@ -253,6 +253,22 @@ export function AllCasesScreen() {
 
       <div className="sh-pad" style={{ flex: 1, overflowY: "auto" }}>
         <div className="sh-measure">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "var(--space-2)",
+            }}
+          >
+            <div className="sh-kicker" style={{ margin: 0 }}>
+              Filters
+            </div>
+            <button type="button" className="btn btn-ghost" onClick={clearFilters} disabled={!hasFilters}>
+              Reset filters
+            </button>
+          </div>
+
           <div className="field" style={{ marginBottom: "var(--space-3)" }}>
             <label htmlFor="case-search">Keyword</label>
             <input
@@ -376,22 +392,8 @@ export function AllCasesScreen() {
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: "var(--space-3)",
-            }}
-          >
-            <div className="sh-meta">
-              {filtered.length} casefile{filtered.length === 1 ? "" : "s"}
-            </div>
-            {hasFilters && (
-              <button type="button" className="btn btn-ghost" onClick={clearFilters}>
-                Clear filters
-              </button>
-            )}
+          <div className="sh-meta" style={{ marginTop: "var(--space-3)" }}>
+            {filtered.length} casefile{filtered.length === 1 ? "" : "s"}
           </div>
 
           <div className="sh-section" style={{ marginTop: "var(--space-3)" }}>
