@@ -101,3 +101,22 @@ export interface UploadedDocument {
 }
 
 export type GraphEdge = [string, string];
+
+export type ChatRole = "user" | "assistant";
+
+export interface ChatMessage {
+  id: number;
+  role: ChatRole;
+  text: string;
+  /** Evidence/note/order/etc. codes the answer was drawn from. */
+  sources?: string[];
+}
+
+/** Totals mirrored from the Case folder stat row, so chat answers agree with it. */
+export interface ChatCounts {
+  photos: number;
+  notes: number;
+  requests: number;
+  scans: number;
+  documents: number;
+}

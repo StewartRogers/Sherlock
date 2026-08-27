@@ -7,8 +7,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { askSherlock, type ChatContext } from "./chat";
 import {
   CAPTURE_PHOTOS,
+  CARRIED_NOTES,
+  CARRIED_PHOTOS,
   DEFAULT_EMPLOYERS,
   EMPLOYER_SLOTS,
   NEW_CASE_STAMP,
@@ -17,6 +20,7 @@ import {
 } from "./data";
 import { SAMPLE_SCAN_TEXT } from "./data";
 import type {
+  ChatMessage,
   Employer,
   EmployerSlot,
   GraphEdge,
@@ -61,6 +65,7 @@ interface SherlockState {
   graphLinks: GraphEdge[];
   /** Edge keys (see edgeKey()) the inspector has removed, including inferred ones. */
   removedGraphLinks: string[];
+  chatMessages: ChatMessage[];
 }
 
 const INITIAL: SherlockState = {
@@ -89,6 +94,7 @@ const INITIAL: SherlockState = {
   selectedGraphNode: null,
   graphLinks: [],
   removedGraphLinks: [],
+  chatMessages: [],
 };
 
 /** Normalizes a pair of node ids so a link's direction doesn't matter for lookups. */
@@ -188,6 +194,7 @@ function useSherlockState() {
           notes: [],
           editingNoteId: null,
           documents: [],
+          chatMessages: [],
         };
       }),
     [patch],
@@ -516,6 +523,48 @@ function useSherlockState() {
     [state.caseEmployers],
   );
 
+  /* — chat — */
+  const sendChatQuestion = useCallback(
+    (text: string) =>
+      patch((s) => {
+        const q = text.trim();
+        if (!q) return null;
+        const slotFor = (slot: EmployerSlot | null): Employer | null => {
+          if (!slot) return null;
+          const i = EMPLOYER_SLOTS.indexOf(slot);
+          return i >= 0 ? s.caseEmployers[i] ?? null : null;
+        };
+        const ctx: ChatContext = {
+          caseEmployers: s.caseEmployers,
+          notes: s.notes,
+          scanPages: s.scanPages,
+          documents: s.documents,
+          reportByEmployer: s.caseEmployers.map((employer) => ({
+            employer,
+            doc: s.reportDocs[employer.id] ?? defaultDoc(employer.id, s.caseEmployers),
+          })),
+          employerForSlot: slotFor,
+          counts: {
+            photos: s.captureStep + CARRIED_PHOTOS,
+            notes: s.notes.length + CARRIED_NOTES,
+            requests: s.notes.filter((n) => n.kind === "request").length,
+            scans: s.scanPages.length,
+            documents: s.documents.length,
+          },
+        };
+        const answer = askSherlock(q, ctx);
+        const userMsg: ChatMessage = { id: Date.now(), role: "user", text: q };
+        const replyMsg: ChatMessage = {
+          id: Date.now() + 1,
+          role: "assistant",
+          text: answer.text,
+          sources: answer.sources,
+        };
+        return { chatMessages: [...s.chatMessages, userMsg, replyMsg] };
+      }),
+    [patch, defaultDoc],
+  );
+
   return {
     ...state,
     activeReportEmployer,
@@ -559,6 +608,7 @@ function useSherlockState() {
     clearGraphSelection,
     addGraphLink,
     removeGraphLink,
+    sendChatQuestion,
   };
 }
 

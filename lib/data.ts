@@ -192,6 +192,10 @@ export const RECENT_CASES: RecentCase[] = [
 
 export const CASES_PER_PAGE = 5;
 
+/** Evidence carried over from earlier in the inspection, before this session. */
+export const CARRIED_PHOTOS = 7;
+export const CARRIED_NOTES = 4;
+
 /** Stamped onto a new casefile in place of a real geolocation + clock read. */
 export const NEW_CASE_STAMP = {
   address: "1450 Meridian Rd, Coquitlam",

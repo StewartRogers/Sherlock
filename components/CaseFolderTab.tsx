@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { CASE_EVIDENCE, fileExtLabel, formatBytes, NEW_CASE_STAMP, TYPE_TAG } from "@/lib/data";
+import {
+  CARRIED_NOTES,
+  CARRIED_PHOTOS,
+  CASE_EVIDENCE,
+  fileExtLabel,
+  formatBytes,
+  NEW_CASE_STAMP,
+  TYPE_TAG,
+} from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import type { Employer, Note } from "@/lib/types";
+import { ChatPanel } from "./ChatPanel";
 import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
-
-/** Evidence carried over from earlier in the inspection, before this session. */
-const CARRIED_PHOTOS = 7;
-const CARRIED_NOTES = 4;
 
 function ChevronIcon() {
   return (
@@ -24,7 +29,7 @@ function truncateWords(text: string, n: number): { shown: string; isLong: boolea
   return { shown: words.slice(0, n).join(" ") + "…", isLong: true };
 }
 
-type SectionKey = "photos" | "notes" | "requests" | "scans" | "documents";
+type SectionKey = "chat" | "photos" | "notes" | "requests" | "scans" | "documents";
 
 function NoteRows({
   items,
@@ -85,9 +90,16 @@ export function CaseFolderTab() {
     primaryMap,
     employerForSlot,
     setPrimary,
+    chatMessages,
+    sendChatQuestion,
+    reportDocs,
+    defaultDoc,
+    setTab,
+    setReportEmployer,
   } = useSherlock();
 
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({
+    chat: true,
     photos: true,
     notes: true,
     requests: true,
@@ -118,6 +130,44 @@ export function CaseFolderTab() {
 
   const viewingCode = viewing?.code ?? null;
   const viewingEvidence = viewingCode ? CASE_EVIDENCE.find((e) => e.code === viewingCode) : undefined;
+
+  /** Jumps to whatever a chat answer's source code points at. */
+  function handleSourceClick(code: string) {
+    const evidence = CASE_EVIDENCE.find((e) => e.code === code);
+    if (evidence) {
+      setOpen((s) => ({ ...s, photos: true }));
+      setViewing({ code: evidence.code, label: evidence.label, variant: "construction", meta: evidence.description });
+      return;
+    }
+    const scan = scanPages.find((p) => `SN-${p.id}` === code);
+    if (scan) {
+      setOpen((s) => ({ ...s, scans: true }));
+      setViewing({ code, label: "Scanned page", variant: "notes", meta: scan.text });
+      return;
+    }
+    const doc = documents.find((d) => d.code === code);
+    if (doc) {
+      setOpen((s) => ({ ...s, documents: true }));
+      setViewing({ code: doc.code, label: doc.name, variant: "placeholder", meta: formatBytes(doc.size) });
+      return;
+    }
+    const note = notes.find((n) => n.code === code);
+    if (note) {
+      setOpen((s) => ({ ...s, [note.kind === "request" ? "requests" : "notes"]: true }));
+      setExpandedNotes((s) => new Set(s).add(note.id));
+      return;
+    }
+    if (/^(ORD|RR)-/.test(code)) {
+      for (const ce of caseEmployers) {
+        const doc = reportDocs[ce.id] ?? defaultDoc(ce.id, caseEmployers);
+        if (doc.orders.some((o) => o.code === code) || doc.refs.some((r) => r.code === code)) {
+          setReportEmployer(ce.id);
+          break;
+        }
+      }
+      setTab("report");
+    }
+  }
 
   return (
     <div>
@@ -156,6 +206,24 @@ export function CaseFolderTab() {
           <div className="sh-stat-num">{documents.length}</div>
           <div className="sh-stat-label">Documents</div>
         </div>
+      </div>
+
+      {/* — Chat with your data — */}
+      <div className="sh-section">
+        <button
+          type="button"
+          className="sh-collapse-head"
+          aria-expanded={open.chat}
+          onClick={() => toggleSection("chat")}
+        >
+          <span className="sh-kicker" style={{ margin: 0 }}>
+            Chat with your data
+          </span>
+          <ChevronIcon />
+        </button>
+        {open.chat && (
+          <ChatPanel messages={chatMessages} onAsk={sendChatQuestion} onSourceClick={handleSourceClick} />
+        )}
       </div>
 
       {/* — Photos — */}
