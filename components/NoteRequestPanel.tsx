@@ -1,5 +1,6 @@
 "use client";
 
+import { employerLabels } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import type { NoteKind } from "@/lib/types";
 import { MicIcon } from "./icons";
@@ -73,7 +74,9 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
 
       <div className="sh-measure" style={{ marginTop: "var(--space-4)" }}>
         <div className="sh-section field" style={{ marginTop: 0 }}>
-          <label id={`${kind}-employer-label`}>Employer</label>
+          <span className="field-label" id={`${kind}-employer-label`}>
+            Employer
+          </span>
           <div
             style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
             role="group"
@@ -136,7 +139,7 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
           ) : (
             <div style={{ fontSize: 12, opacity: 0.6 }}>Tap to record</div>
           )}
-          <span role="status" className="sr-only" style={{ position: "absolute", left: -9999 }}>
+          <span role="status" className="sr-only">
             {recording ? "Listening…" : ""}
           </span>
         </div>
@@ -160,12 +163,7 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
                 .reverse()
                 .map((n) => {
                   const isEditing = editingNoteId === n.id;
-                  const employerLabels = n.employers.length
-                    ? n.employers
-                        .map((id) => caseEmployers.find((ce) => ce.id === id)?.label)
-                        .filter(Boolean)
-                        .join(", ")
-                    : "Unassigned";
+                  const tagLine = employerLabels(n.employers, caseEmployers);
                   return (
                     <div
                       className="sh-row"
@@ -187,7 +185,7 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
                         }}
                       >
                         <div className="sh-row-meta" style={{ flex: 1 }}>
-                          {employerLabels}
+                          {tagLine}
                         </div>
                         <button
                           type="button"

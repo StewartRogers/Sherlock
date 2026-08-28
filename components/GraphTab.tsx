@@ -402,6 +402,16 @@ export function GraphTab() {
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
+  /** A gesture the browser took over (touch scroll, long-press menu) fires
+      pointercancel instead of pointerup; without this the dashed drag line
+      stays anchored to the node indefinitely. */
+  function handleNodePointerCancel() {
+    dragStart.current = null;
+    dragged.current = false;
+    setDragFrom(null);
+    setDragPos(null);
+  }
+
   function handleNodePointerMove(e: React.PointerEvent<SVGGElement>) {
     const id = e.currentTarget.dataset.nodeId;
     if (!id || dragFrom !== id) return;
@@ -522,6 +532,8 @@ export function GraphTab() {
                 onPointerDown={handleNodePointerDown}
                 onPointerMove={handleNodePointerMove}
                 onPointerUp={handleNodePointerUp}
+                onPointerCancel={handleNodePointerCancel}
+                onLostPointerCapture={handleNodePointerCancel}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -597,6 +609,11 @@ export function GraphTab() {
         {sel ? (
           (() => {
             const node = nodeById.get(sel);
+            /* The selection survives its node — delete the document a node
+               stands for and this used to render a blank titled card. */
+            if (!node) {
+              return <p className="sh-meta">Select a node to see its links and edit them.</p>;
+            }
             return (
               <div className="card elev-md" onClick={(e) => e.stopPropagation()}>
                 <div className="card-kicker">{KIND_LABEL[kindById.get(sel) ?? "evidence"]}</div>
@@ -650,6 +667,12 @@ export function GraphTab() {
                           style={{ cursor: "pointer" }}
                           onClick={() => selectGraphNode(id)}
                           onKeyDown={(e) => {
+                            /* Only act on the row itself. Without this the
+                               Remove button's Enter keydown bubbles here and
+                               preventDefault cancels its activation, so the
+                               keyboard path removed nothing and re-selected
+                               the node instead. */
+                            if (e.target !== e.currentTarget) return;
                             if (e.key === "Enter" || e.key === " ") {
                               e.preventDefault();
                               selectGraphNode(id);
@@ -687,7 +710,10 @@ export function GraphTab() {
                     <div style={{ display: "flex", gap: 8 }}>
                       <select
                         className="input"
-                        value={addTarget}
+                        /* The selection can move while a target is chosen.
+                           Rather than clear it from an effect, treat a target
+                           that is no longer offered as no target at all. */
+                        value={addableNodes.some((n) => n.id === addTarget) ? addTarget : ""}
                         onChange={(e) => setAddTarget(e.target.value)}
                         aria-label="Node to link"
                       >
@@ -701,7 +727,7 @@ export function GraphTab() {
                       <button
                         type="button"
                         className="btn btn-secondary"
-                        disabled={!addTarget}
+                        disabled={!addableNodes.some((n) => n.id === addTarget)}
                         onClick={() => {
                           addGraphLink(sel, addTarget);
                           setAddTarget("");

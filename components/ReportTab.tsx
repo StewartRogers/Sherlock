@@ -88,7 +88,7 @@ export function ReportTab() {
         <div>
           <div className="sh-kicker">Orders</div>
           {reportDoc.orders.map((item, i) => (
-            <div className="field" style={{ marginBottom: "var(--space-4)" }} key={`order-${i}`}>
+            <div className="field" style={{ marginBottom: "var(--space-4)" }} key={item.code}>
               <label htmlFor={`order-${i}`}>{item.code}</label>
               <textarea
                 id={`order-${i}`}
@@ -109,7 +109,7 @@ export function ReportTab() {
         <div style={{ marginTop: "var(--space-6)" }}>
           <div className="sh-kicker">Regulation references</div>
           {reportDoc.refs.map((item, i) => (
-            <div style={{ marginBottom: "var(--space-4)" }} key={`ref-${i}`}>
+            <div style={{ marginBottom: "var(--space-4)" }} key={item.code}>
               <div className="sh-row-title" style={{ fontSize: 13, marginBottom: 6 }}>
                 {item.code}
               </div>

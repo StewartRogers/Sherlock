@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
 
 const SUGGESTIONS = ["What's still open?", "List the orders", "How many photos are there?"];
@@ -17,14 +17,18 @@ export function ChatPanel({
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
 
+  /* Scrolling from the click handler raced the render that adds the message —
+     on the first question the list did not exist yet. Do it after the commit. */
+  useEffect(() => {
+    const list = listRef.current;
+    if (list) list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
   function ask(text: string) {
     const q = text.trim();
     if (!q) return;
     onAsk(q);
     setDraft("");
-    requestAnimationFrame(() => {
-      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-    });
   }
 
   return (
@@ -46,6 +50,9 @@ export function ChatPanel({
         <div
           ref={listRef}
           className="sh-list"
+          role="log"
+          aria-live="polite"
+          tabIndex={0}
           style={{ maxHeight: 360, overflowY: "auto", paddingRight: 2 }}
         >
           {messages.map((m) => (

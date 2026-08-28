@@ -122,7 +122,7 @@ export const CASE_EVIDENCE: CaseEvidence[] = [
 ];
 
 /** Look up a case-evidence item's label by its code, for rendering thumbnails. */
-export const EVIDENCE_BY_CODE: Record<string, CaseEvidence> = Object.fromEntries(
+export const EVIDENCE_BY_CODE: Record<string, CaseEvidence | undefined> = Object.fromEntries(
   CASE_EVIDENCE.map((e) => [e.code, e]),
 );
 
@@ -208,10 +208,16 @@ const MONTH_ABBR = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-/** Formats a RecentCase's ISO date (YYYY-MM-DD) as e.g. "Aug 18, 2026". */
+/**
+ * Formats a RecentCase's ISO date (YYYY-MM-DD) as e.g. "Aug 18, 2026",
+ * falling back to the raw string rather than rendering "undefined 18, NaN"
+ * if it is ever handed something that is not an ISO date.
+ */
 export function formatCaseDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
-  return `${MONTH_ABBR[(m ?? 1) - 1]} ${d}, ${y}`;
+  const valid =
+    Number.isInteger(y) && Number.isInteger(m) && Number.isInteger(d) && m >= 1 && m <= 12;
+  return valid ? `${MONTH_ABBR[m - 1]} ${d}, ${y}` : iso;
 }
 
 /** The address · date line shown under a casefile's name. */
@@ -246,12 +252,29 @@ function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): nu
 }
 
 /** The jobsite in JOBSITE_LOCATIONS closest to the given coordinate. */
-export function nearestJobsite(lat: number, lng: number): JobsiteLocation {
-  return JOBSITE_LOCATIONS.reduce((closest, site) =>
-    haversineKm(lat, lng, site.lat, site.lng) < haversineKm(lat, lng, closest.lat, closest.lng)
-      ? site
-      : closest,
-  );
+export function nearestJobsite(lat: number, lng: number): JobsiteLocation | null {
+  let closest: JobsiteLocation | null = null;
+  let best = Infinity;
+  for (const site of JOBSITE_LOCATIONS) {
+    const km = haversineKm(lat, lng, site.lat, site.lng);
+    if (km < best) {
+      best = km;
+      closest = site;
+    }
+  }
+  return closest;
+}
+
+/**
+ * Employer labels for a set of tag ids, for the meta line under a note or
+ * document. Ids that no longer resolve are dropped, and a set that resolves
+ * to nothing reads "Unassigned" rather than rendering an empty line.
+ */
+export function employerLabels(ids: string[], employers: Employer[]): string {
+  const labels = ids
+    .map((id) => employers.find((e) => e.id === id)?.label)
+    .filter((label): label is string => Boolean(label));
+  return labels.length ? labels.join(", ") : "Unassigned";
 }
 
 /** A short file-type label for a document's stand-in thumbnail, e.g. "PDF". */

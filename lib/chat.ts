@@ -34,6 +34,16 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${suffix}`;
 }
 
+/**
+ * Whole-word matcher for a caller-supplied string. The input is escaped
+ * first: employer names come straight from the inspector, and a name like
+ * "(a+)+" would otherwise throw or hang the render thread.
+ */
+function wholeWord(value: string): RegExp {
+  const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`, "i");
+}
+
 function truncate(text: string, n: number): string {
   const t = text.trim();
   return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t;
@@ -151,7 +161,10 @@ function answerOpenItems(ctx: ChatContext): ChatAnswer {
 function answerOrders(ctx: ChatContext): ChatAnswer {
   const all = ctx.reportByEmployer.flatMap(({ employer, doc }) => doc.orders.map((order) => ({ employer, order })));
   if (all.length === 0) return { text: "No orders have been drafted yet.", sources: [] };
-  const lines = all.map(({ employer, order }) => `${order.code} (${employer.label}): ${truncate(order.text, 140)}`);
+  const lines = all.map(
+    ({ employer, order }) =>
+      `${order.code} (${employer.label}): ${order.text ? truncate(order.text, 140) : "(not yet drafted)"}`,
+  );
   return { text: `${plural(all.length, "order")} drafted:\n${lines.join("\n")}`, sources: all.map(({ order }) => order.code) };
 }
 
@@ -261,9 +274,13 @@ export function askSherlock(query: string, ctx: ChatContext): ChatAnswer {
     }
   }
 
+  /* Employer names are typed by the inspector, so a two-letter name like "On"
+     used to match inside "what's still open" and answer the wrong question.
+     Require a whole-word hit on a name long enough to be meant. */
   const employerMatch = ctx.caseEmployers.find((ce) => {
-    const short = ce.label.split(" — ")[0].toLowerCase();
-    return lower.includes(ce.label.toLowerCase()) || lower.includes(short);
+    if (lower.includes(ce.label.toLowerCase())) return true;
+    const short = ce.label.split(" — ")[0].toLowerCase().trim();
+    return short.length >= 3 && wholeWord(short).test(lower);
   });
   if (employerMatch) return answerForEmployer(employerMatch, ctx);
 

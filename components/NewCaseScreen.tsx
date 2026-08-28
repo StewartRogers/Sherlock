@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NEW_CASE_STAMP, nearestJobsite } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 
@@ -19,7 +19,18 @@ export function NewCaseScreen() {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
 
-  function useCurrentLocation() {
+  /* The lookup has a 10s timeout, so it can still be in flight when the
+     inspector backs out of this screen. Its callbacks check this first
+     rather than writing state for a screen that is gone. */
+  const live = useRef(true);
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
+
+  function handleUseCurrentLocation() {
     if (!("geolocation" in navigator)) {
       setLocateError("Location services aren't available on this device.");
       return;
@@ -28,11 +39,14 @@ export function NewCaseScreen() {
     setLocateError(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (!live.current) return;
         const site = nearestJobsite(pos.coords.latitude, pos.coords.longitude);
-        setNewCaseAddress(site.address);
+        if (site) setNewCaseAddress(site.address);
+        else setLocateError("No known jobsite is near you — enter the address manually.");
         setLocating(false);
       },
       (err) => {
+        if (!live.current) return;
         setLocateError(
           err.code === err.PERMISSION_DENIED
             ? "Location access was denied — enter the address manually."
@@ -69,7 +83,7 @@ export function NewCaseScreen() {
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={useCurrentLocation}
+              onClick={handleUseCurrentLocation}
               disabled={locating}
             >
               {locating ? "Locating…" : "Use my location"}

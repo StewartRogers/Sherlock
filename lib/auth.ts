@@ -77,13 +77,3 @@ export async function verifySessionToken(token: string, secret: string): Promise
     return false;
   }
 }
-
-/**
- * Only same-origin, non-protocol-relative paths may be used as a post-login
- * destination — otherwise `?next=` becomes an open redirect.
- */
-export function safeRedirectPath(value: string | null | undefined): string {
-  if (!value) return "/";
-  if (!value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
-}

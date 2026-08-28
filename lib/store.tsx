@@ -17,8 +17,8 @@ import {
   NEW_CASE_STAMP,
   RECENT_CASES,
   REPORT_DEFAULTS,
+  SAMPLE_SCAN_TEXT,
 } from "./data";
-import { SAMPLE_SCAN_TEXT } from "./data";
 import type {
   ChatMessage,
   Employer,
@@ -97,6 +97,53 @@ const INITIAL: SherlockState = {
   chatMessages: [],
 };
 
+/**
+ * Everything that belongs to one casefile rather than to the session. Opening
+ * or starting a different casefile spreads this in, so nothing — a note tagged
+ * to an employer that no longer exists, a scan page, a deleted graph edge —
+ * survives into the next one.
+ */
+const PER_CASE_RESET = {
+  tab: INITIAL.tab,
+  captureStep: INITIAL.captureStep,
+  nudgeDismissed: INITIAL.nudgeDismissed,
+  captureEmployer: INITIAL.captureEmployer,
+  recording: INITIAL.recording,
+  transcript: INITIAL.transcript,
+  notes: INITIAL.notes,
+  draftNoteEmployers: INITIAL.draftNoteEmployers,
+  editingNoteId: INITIAL.editingNoteId,
+  scanPages: INITIAL.scanPages,
+  documents: INITIAL.documents,
+  primaryMap: INITIAL.primaryMap,
+  reportDocs: INITIAL.reportDocs,
+  selectedGraphNode: INITIAL.selectedGraphNode,
+  graphLinks: INITIAL.graphLinks,
+  removedGraphLinks: INITIAL.removedGraphLinks,
+  chatMessages: INITIAL.chatMessages,
+} satisfies Partial<SherlockState>;
+
+/**
+ * Note codes are positional, so they have to be re-derived whenever the set
+ * changes. Renumbering only the note that moved would leave a gap that the
+ * next save fills, producing two notes with the same code.
+ */
+function renumberNotes(notes: Note[]): Note[] {
+  const seq: Record<NoteKind, number> = { note: 0, request: 0 };
+  return notes.map((n) => {
+    seq[n.kind] += 1;
+    return { ...n, code: (n.kind === "request" ? "REQ-" : "N-") + seq[n.kind] };
+  });
+}
+
+/** The report employer, falling back to the first when the selection is stale. */
+function resolveReportEmployer(
+  employers: Employer[],
+  selected: string,
+): string | undefined {
+  return employers.some((c) => c.id === selected) ? selected : employers[0]?.id;
+}
+
 /** Normalizes a pair of node ids so a link's direction doesn't matter for lookups. */
 export function edgeKey(a: string, b: string): string {
   return [a, b].sort().join("::");
@@ -124,11 +171,24 @@ function useSherlockState() {
       the static demo cards still just open the canned Meridian Townhomes case. */
   const openCase = useCallback(
     (id: string) =>
-      patch((s) =>
-        id === s.activeCaseId
-          ? { screen: "app", tab: "capture" }
-          : { screen: "app", tab: "capture", caseEmployers: DEFAULT_EMPLOYERS },
-      ),
+      patch((s) => {
+        if (id === s.activeCaseId) return { screen: "app", tab: "capture" };
+
+        /* A different casefile: clear the last one's contents and take the
+           employers and address from its card, so nothing carries across. */
+        const entry = s.recentCases.find((c) => c.id === id);
+        const caseEmployers: Employer[] = entry?.employers.length
+          ? entry.employers.map((label, i) => ({ id: `emp${i}`, label }))
+          : DEFAULT_EMPLOYERS;
+        return {
+          ...PER_CASE_RESET,
+          screen: "app",
+          activeCaseId: id,
+          caseEmployers,
+          caseAddress: entry?.address ?? NEW_CASE_STAMP.address,
+          reportEmployer: caseEmployers[0].id,
+        };
+      }),
     [patch],
   );
 
@@ -178,8 +238,8 @@ function useSherlockState() {
           employers: employers.map((e) => e.label),
         };
         return {
+          ...PER_CASE_RESET,
           screen: "app",
-          tab: "capture",
           recentCases: [entry, ...s.recentCases],
           activeCaseId: caseId,
           caseEmployers: employers,
@@ -187,14 +247,7 @@ function useSherlockState() {
           newCaseEmployers: [],
           newEmployerText: "",
           newCaseAddress: "",
-          captureEmployer: {},
-          captureStep: 0,
           reportEmployer: employers[0].id,
-          reportDocs: {},
-          notes: [],
-          editingNoteId: null,
-          documents: [],
-          chatMessages: [],
         };
       }),
     [patch],
@@ -251,18 +304,17 @@ function useSherlockState() {
       patch((s) => {
         const text = s.transcript.trim();
         if (!text) return null;
-        const seq = s.notes.filter((n) => n.kind === kind).length + 1;
         return {
-          notes: [
+          notes: renumberNotes([
             ...s.notes,
             {
               id: Date.now(),
               text,
               employers: s.draftNoteEmployers,
               kind,
-              code: (kind === "request" ? "REQ-" : "N-") + seq,
+              code: "",
             },
-          ],
+          ]),
           transcript: "",
           draftNoteEmployers: [],
           recording: false,
@@ -276,32 +328,33 @@ function useSherlockState() {
   );
   const toggleNoteEmployer = useCallback(
     (id: number, empId: string) =>
-      patch((s) => ({
-        notes: s.notes.map((n) =>
-          n.id !== id
-            ? n
-            : {
-                ...n,
-                employers: n.employers.includes(empId)
-                  ? n.employers.filter((v) => v !== empId)
-                  : [...n.employers, empId],
-              },
-        ),
-      })),
-    [patch],
-  );
-  const setNoteKind = useCallback(
-    (id: number, kind: NoteKind) =>
       patch((s) => {
-        const others = s.notes.filter((n) => n.id !== id && n.kind === kind);
+        const adding = !s.notes.find((n) => n.id === id)?.employers.includes(empId);
         return {
           notes: s.notes.map((n) =>
             n.id !== id
               ? n
-              : { ...n, kind, code: (kind === "request" ? "REQ-" : "N-") + (others.length + 1) },
+              : {
+                  ...n,
+                  employers: adding
+                    ? [...n.employers, empId]
+                    : n.employers.filter((v) => v !== empId),
+                },
           ),
+          /* Re-applying a tag must undo an earlier manual removal, or the
+             graph keeps suppressing an edge the tag says should be there. */
+          removedGraphLinks: adding
+            ? s.removedGraphLinks.filter((k) => k !== edgeKey(empId, `note-${id}`))
+            : s.removedGraphLinks,
         };
       }),
+    [patch],
+  );
+  const setNoteKind = useCallback(
+    (id: number, kind: NoteKind) =>
+      patch((s) => ({
+        notes: renumberNotes(s.notes.map((n) => (n.id !== id ? n : { ...n, kind }))),
+      })),
     [patch],
   );
 
@@ -326,7 +379,12 @@ function useSherlockState() {
     (files: File[]) =>
       patch((s) => {
         if (!files.length) return null;
-        const start = s.documents.length;
+        /* Counting the surviving documents would re-issue a code after a
+           delete: remove D-2 of three and the next upload is a second D-3. */
+        const start = s.documents.reduce((max, d) => {
+          const n = Number(d.code.replace("D-", ""));
+          return Number.isFinite(n) && n > max ? n : max;
+        }, 0);
         const added: UploadedDocument[] = files.map((f, i) => ({
           id: Date.now() + i,
           code: `D-${start + i + 1}`,
@@ -340,22 +398,39 @@ function useSherlockState() {
   );
   const toggleDocumentEmployer = useCallback(
     (id: number, empId: string) =>
-      patch((s) => ({
-        documents: s.documents.map((d) =>
-          d.id !== id
-            ? d
-            : {
-                ...d,
-                employers: d.employers.includes(empId)
-                  ? d.employers.filter((v) => v !== empId)
-                  : [...d.employers, empId],
-              },
-        ),
-      })),
+      patch((s) => {
+        const adding = !s.documents.find((d) => d.id === id)?.employers.includes(empId);
+        return {
+          documents: s.documents.map((d) =>
+            d.id !== id
+              ? d
+              : {
+                  ...d,
+                  employers: adding
+                    ? [...d.employers, empId]
+                    : d.employers.filter((v) => v !== empId),
+                },
+          ),
+          removedGraphLinks: adding
+            ? s.removedGraphLinks.filter((k) => k !== edgeKey(empId, `doc-${id}`))
+            : s.removedGraphLinks,
+        };
+      }),
     [patch],
   );
   const removeDocument = useCallback(
-    (id: number) => patch((s) => ({ documents: s.documents.filter((d) => d.id !== id) })),
+    (id: number) =>
+      patch((s) => {
+        /* Drop the graph state that pointed at this document too, so a later
+           upload reusing the node id cannot inherit its links. */
+        const node = `doc-${id}`;
+        return {
+          documents: s.documents.filter((d) => d.id !== id),
+          graphLinks: s.graphLinks.filter(([a, b]) => a !== node && b !== node),
+          removedGraphLinks: s.removedGraphLinks.filter((k) => !k.split("::").includes(node)),
+          selectedGraphNode: s.selectedGraphNode === node ? null : s.selectedGraphNode,
+        };
+      }),
     [patch],
   );
 
@@ -371,9 +446,11 @@ function useSherlockState() {
   );
 
   /** The report employer, falling back to the first when the selection is stale. */
-  const activeReportEmployer = state.caseEmployers.some((c) => c.id === state.reportEmployer)
-    ? state.reportEmployer
-    : state.caseEmployers[0]?.id;
+  const activeReportEmployer = resolveReportEmployer(state.caseEmployers, state.reportEmployer);
+
+  /** The open casefile's name, so screens don't hard-code the seed casefile's. */
+  const caseName =
+    state.recentCases.find((c) => c.id === state.activeCaseId)?.name ?? RECENT_CASES[0].name;
 
   const defaultDoc = useCallback(
     (empId: string, employers: Employer[]): ReportDoc => {
@@ -381,7 +458,13 @@ function useSherlockState() {
         employers.findIndex((c) => c.id === empId),
         0,
       );
-      const d = REPORT_DEFAULTS[i % REPORT_DEFAULTS.length];
+      /* The seed reports are authored against the two positional employer
+         slots. Cycling them past that handed a third employer a copy of the
+         first one's ORD-1/ORD-2/RR-1, so the same code existed twice and the
+         graph collapsed both into one node. Beyond the authored slots the
+         inspector starts from an empty report. */
+      const d = REPORT_DEFAULTS[i];
+      if (!d) return { note: "", noteEvidence: [], orders: [], refs: [] };
       return {
         note: d.note,
         noteEvidence: [...d.noteEvidence],
@@ -395,9 +478,7 @@ function useSherlockState() {
   const updateDoc = useCallback(
     (fn: (d: ReportDoc) => ReportDoc) =>
       patch((s) => {
-        const emp = s.caseEmployers.some((c) => c.id === s.reportEmployer)
-          ? s.reportEmployer
-          : s.caseEmployers[0]?.id;
+        const emp = resolveReportEmployer(s.caseEmployers, s.reportEmployer);
         if (!emp) return null;
         const cur = s.reportDocs[emp] ?? defaultDoc(emp, s.caseEmployers);
         return { reportDocs: { ...s.reportDocs, [emp]: fn(cur) } };
@@ -420,9 +501,7 @@ function useSherlockState() {
   const addOrder = useCallback(
     () =>
       patch((s) => {
-        const emp = s.caseEmployers.some((c) => c.id === s.reportEmployer)
-          ? s.reportEmployer
-          : s.caseEmployers[0]?.id;
+        const emp = resolveReportEmployer(s.caseEmployers, s.reportEmployer);
         if (!emp) return null;
         const total = s.caseEmployers.reduce(
           (sum, ce) => sum + (s.reportDocs[ce.id] ?? defaultDoc(ce.id, s.caseEmployers)).orders.length,
@@ -449,9 +528,7 @@ function useSherlockState() {
   const addRef = useCallback(
     () =>
       patch((s) => {
-        const emp = s.caseEmployers.some((c) => c.id === s.reportEmployer)
-          ? s.reportEmployer
-          : s.caseEmployers[0]?.id;
+        const emp = resolveReportEmployer(s.caseEmployers, s.reportEmployer);
         if (!emp) return null;
         const total = s.caseEmployers.reduce(
           (sum, ce) => sum + (s.reportDocs[ce.id] ?? defaultDoc(ce.id, s.caseEmployers)).refs.length,
@@ -511,7 +588,7 @@ function useSherlockState() {
   const reportDoc = activeReportEmployer
     ? state.reportDocs[activeReportEmployer] ??
       defaultDoc(activeReportEmployer, state.caseEmployers)
-    : REPORT_DEFAULTS[0];
+    : defaultDoc("", []);
 
   /** Resolve one of the two authored evidence slots to a live employer. */
   const employerForSlot = useCallback(
@@ -568,6 +645,7 @@ function useSherlockState() {
   return {
     ...state,
     activeReportEmployer,
+    caseName,
     reportDoc,
     defaultDoc,
     employerForSlot,

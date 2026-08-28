@@ -1,15 +1,32 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { fileExtLabel, formatBytes } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import { ImageSlot } from "./ImageSlot";
 import { UploadIcon } from "./icons";
 
+/** Anything larger than this is a mis-pick, not a site document. */
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
 export function UploadTab() {
   const { documents, caseEmployers, addDocuments, toggleDocumentEmployer, removeDocument } =
     useSherlock();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [rejected, setRejected] = useState<string | null>(null);
+
+  /** Shared by the picker and the drop zone: keep what fits, say what didn't. */
+  function accept(files: File[]) {
+    if (!files.length) return;
+    const tooBig = files.filter((f) => f.size > MAX_FILE_BYTES);
+    const keep = files.filter((f) => f.size <= MAX_FILE_BYTES);
+    setRejected(
+      tooBig.length
+        ? `${tooBig.map((f) => f.name).join(", ")} — over ${MAX_FILE_BYTES / 1024 / 1024} MB, not uploaded.`
+        : null,
+    );
+    if (keep.length) addDocuments(keep);
+  }
 
   return (
     <div className="sh-measure">
@@ -22,8 +39,8 @@ export function UploadTab() {
         type="file"
         multiple
         onChange={(e) => {
-          const files = Array.from(e.target.files ?? []);
-          if (files.length) addDocuments(files);
+          accept(Array.from(e.target.files ?? []));
+          // Cleared so re-picking the same file still fires a change event.
           e.target.value = "";
         }}
         style={{ display: "none" }}
@@ -33,6 +50,11 @@ export function UploadTab() {
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          accept(Array.from(e.dataTransfer.files));
+        }}
         style={{
           display: "flex",
           flexDirection: "column",
@@ -55,9 +77,15 @@ export function UploadTab() {
         </span>
         <span style={{ fontSize: 14, fontWeight: 600 }}>Upload documents</span>
         <span className="sh-meta" style={{ fontSize: 12 }}>
-          Certificates, training records, correspondence — any file from this device
+          Certificates, training records, correspondence — drop a file here or tap to browse
         </span>
       </button>
+
+      {rejected && (
+        <p role="alert" className="sh-meta" style={{ marginBottom: "var(--space-4)" }}>
+          {rejected}
+        </p>
+      )}
 
       {documents.length === 0 ? (
         <p className="sh-meta">No documents uploaded yet.</p>

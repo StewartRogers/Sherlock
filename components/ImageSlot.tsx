@@ -11,15 +11,13 @@ export type SlotVariant = "placeholder" | "construction" | "notes";
 export function ImageSlot({
   label,
   variant = "placeholder",
-  className = "",
 }: {
   label: string;
   variant?: SlotVariant;
-  className?: string;
 }) {
   if (variant === "placeholder") {
     return (
-      <div className={`sh-slot halftone ${className}`} role="img" aria-label={`Placeholder for ${label}`}>
+      <div className="sh-slot halftone" role="img" aria-label={`Placeholder for ${label}`}>
         <span>{label}</span>
       </div>
     );
@@ -29,7 +27,7 @@ export function ImageSlot({
   const description = variant === "construction" ? "Construction site photo" : "Notebook page photo";
 
   return (
-    <div className={`sh-slot-photo ${className}`} role="img" aria-label={`${description} for ${label}`}>
+    <div className="sh-slot-photo" role="img" aria-label={`${description} for ${label}`}>
       <Illustration />
     </div>
   );

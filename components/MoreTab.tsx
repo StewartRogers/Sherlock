@@ -13,7 +13,16 @@ export function MoreTab() {
   const { setTab } = useSherlock();
 
   async function lock() {
-    await fetch("/api/login", { method: "DELETE" });
+    /* Navigate even if clearing the cookie failed — the point of the button is
+       that the casefile stops being on screen. */
+    try {
+      await fetch("/api/login", { method: "DELETE" });
+    } catch {
+      // Offline: the cookie stays until it expires, but still leave the app.
+    }
+    /* A full navigation on purpose, not a router push: the whole casefile
+       lives in memory, and locking the device has to drop it. */
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/login");
   }
 

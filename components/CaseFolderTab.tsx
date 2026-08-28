@@ -5,6 +5,7 @@ import {
   CARRIED_NOTES,
   CARRIED_PHOTOS,
   CASE_EVIDENCE,
+  employerLabels,
   fileExtLabel,
   formatBytes,
   NEW_CASE_STAMP,
@@ -47,12 +48,7 @@ function NoteRows({
       {items.map((n) => {
         const isExpanded = expandedNotes.has(n.id);
         const { shown, isLong } = truncateWords(n.text, 25);
-        const employerLabels = n.employers.length
-          ? n.employers
-              .map((id) => caseEmployers.find((ce) => ce.id === id)?.label)
-              .filter(Boolean)
-              .join(", ")
-          : "Unassigned";
+        const tagLine = employerLabels(n.employers, caseEmployers);
         return (
           <div className="sh-row" key={n.id} style={{ flexDirection: "column", alignItems: "stretch", gap: 4 }}>
             <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
@@ -71,7 +67,7 @@ function NoteRows({
                 )}
               </div>
             </div>
-            <div className="sh-row-meta">{employerLabels}</div>
+            <div className="sh-row-meta">{tagLine}</div>
           </div>
         );
       })}
@@ -83,6 +79,7 @@ export function CaseFolderTab() {
   const {
     caseEmployers,
     caseAddress,
+    caseName,
     captureStep,
     notes,
     scanPages,
@@ -172,7 +169,7 @@ export function CaseFolderTab() {
   return (
     <div>
       <div className="sh-kicker">Casefile · Active</div>
-      <h2 className="sh-title">Meridian Townhomes</h2>
+      <h2 className="sh-title">{caseName}</h2>
       <p className="sh-meta">
         {caseAddress} · {NEW_CASE_STAMP.timestamp}
       </p>
@@ -326,12 +323,7 @@ export function CaseFolderTab() {
           ) : (
             <div className="sh-list">
               {documents.map((d) => {
-                const employerLabels = d.employers.length
-                  ? d.employers
-                      .map((id) => caseEmployers.find((ce) => ce.id === id)?.label)
-                      .filter(Boolean)
-                      .join(", ")
-                  : "Unassigned";
+                const tagLine = employerLabels(d.employers, caseEmployers);
                 return (
                   <div
                     className="sh-row"
@@ -354,7 +346,7 @@ export function CaseFolderTab() {
                         </span>
                       </div>
                       <p className="sh-meta" style={{ fontSize: 13, margin: 0 }}>
-                        {formatBytes(d.size)} · {employerLabels}
+                        {formatBytes(d.size)} · {tagLine}
                       </p>
                     </div>
                   </div>

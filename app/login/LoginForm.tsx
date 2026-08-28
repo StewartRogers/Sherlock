@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { safeRedirectPath } from "@/lib/auth";
+import { safeRedirectPath } from "@/lib/redirect";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
