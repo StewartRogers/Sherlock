@@ -142,7 +142,8 @@ figcaption {
 /* .field-label is the same treatment for a group caption that names a set of
    controls rather than one, where a <label> would have nothing to point at. */
 .field > label,
-.field > .field-label {
+.field > .field-label,
+.sh-field-head > label {
   display: block; font-size: 12px; margin-bottom: 5px;
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
 }
@@ -163,24 +164,21 @@ figcaption {
 .input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
 textarea.input { min-height: 90px; resize: vertical; }
 
-/* Copy / generate-with-AI affordance pinned to a textarea's top-right corner.
-   The wrapper is the positioning context; the textarea keeps clear space on
-   the right so typed text never runs under the buttons. */
-.sh-field-wrap { position: relative; }
-.sh-field-wrap > textarea.input { padding-right: 68px; }
-.sh-field-toolbar {
-  position: absolute; top: var(--space-2); right: var(--space-2);
-  display: flex; gap: 4px; z-index: 1;
+/* Copy / generate-with-AI affordance, on the same line as its field's
+   label rather than over the textarea. */
+.sh-field-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-2); margin-bottom: 5px;
 }
+.sh-field-head > label { margin-bottom: 0; }
+.sh-field-toolbar { display: flex; gap: 4px; flex: none; }
 .sh-field-toolbar-btn {
-  width: 26px; height: 26px; padding: 0; border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-  border: 1px solid var(--color-divider); color: var(--color-text);
-  box-shadow: var(--shadow-sm);
+  width: 24px; height: 24px; padding: 0; border-radius: var(--radius-sm);
+  background: transparent; border: 1px solid var(--color-divider); color: var(--color-text);
 }
-.sh-field-toolbar-btn svg { width: 14px; height: 14px; display: block; }
-.sh-field-toolbar-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--color-text) 10%, transparent); }
-.sh-field-toolbar-btn:active:not(:disabled) { background: color-mix(in srgb, var(--color-text) 18%, transparent); }
+.sh-field-toolbar-btn svg { width: 13px; height: 13px; display: block; }
+.sh-field-toolbar-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.sh-field-toolbar-btn:active:not(:disabled) { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
 .sh-field-toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .sh-field-toolbar-btn--ok { border-color: var(--color-accent); color: var(--color-accent); }
 .radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }

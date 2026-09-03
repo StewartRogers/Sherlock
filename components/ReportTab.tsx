@@ -25,8 +25,8 @@ function EvidenceRow({ codes, onOpen }: { codes: string[]; onOpen: (item: Eviden
 }
 
 /**
- * Copy-to-clipboard and insert-AI-draft controls, pinned to a textarea's
- * top-right corner. "Generate AI" re-inserts Sherlock's drafted text for
+ * Copy-to-clipboard and insert-AI-draft controls, shown on the same line as
+ * a field's label. "Generate AI" re-inserts Sherlock's drafted text for
  * this field (the same source the field was pre-populated from) — useful
  * once an inspector has edited a field away from the draft and wants it
  * back. It's disabled where no draft exists for the field (e.g. an order
@@ -121,18 +121,18 @@ export function ReportTab() {
 
       <div className="sh-measure" style={{ marginBottom: "var(--space-6)" }}>
         <div className="field">
-          <label htmlFor="report-note">Inspection note</label>
-          <div className="sh-field-wrap">
-            <textarea
-              id="report-note"
-              className="input"
-              rows={21}
-              value={reportDoc.note}
-              onChange={(e) => setReportNote(e.target.value)}
-              placeholder="Notes for this employer"
-            />
+          <div className="sh-field-head">
+            <label htmlFor="report-note">Inspection note</label>
             <FieldToolbar text={reportDoc.note} draft={draftDoc?.note ?? ""} onGenerate={() => setReportNote(draftDoc?.note ?? "")} />
           </div>
+          <textarea
+            id="report-note"
+            className="input"
+            rows={21}
+            value={reportDoc.note}
+            onChange={(e) => setReportNote(e.target.value)}
+            placeholder="Notes for this employer"
+          />
           <EvidenceRow codes={reportDoc.noteEvidence} onOpen={setViewing} />
         </div>
       </div>
@@ -142,22 +142,22 @@ export function ReportTab() {
           <div className="sh-kicker">Orders</div>
           {reportDoc.orders.map((item, i) => (
             <div className="field" style={{ marginBottom: "var(--space-4)" }} key={item.code}>
-              <label htmlFor={`order-${i}`}>{item.code}</label>
-              <div className="sh-field-wrap">
-                <textarea
-                  id={`order-${i}`}
-                  className="input"
-                  rows={9}
-                  value={item.text}
-                  onChange={(e) => setOrderText(i, e.target.value)}
-                  placeholder="Statement of the issue"
-                />
+              <div className="sh-field-head">
+                <label htmlFor={`order-${i}`}>{item.code}</label>
                 <FieldToolbar
                   text={item.text}
                   draft={draftDoc?.orders[i]?.text ?? ""}
                   onGenerate={() => setOrderText(i, draftDoc?.orders[i]?.text ?? "")}
                 />
               </div>
+              <textarea
+                id={`order-${i}`}
+                className="input"
+                rows={9}
+                value={item.text}
+                onChange={(e) => setOrderText(i, e.target.value)}
+                placeholder="Statement of the issue"
+              />
               <EvidenceRow codes={item.evidence} onOpen={setViewing} />
             </div>
           ))}
@@ -175,40 +175,40 @@ export function ReportTab() {
               </div>
               <div className="sh-cols">
                 <div className="field">
-                  <label htmlFor={`ref-${i}-reference`}>Reference</label>
-                  <div className="sh-field-wrap">
-                    <textarea
-                      id={`ref-${i}-reference`}
-                      className="input"
-                      rows={6}
-                      value={item.reference}
-                      onChange={(e) => setRefField(i, "reference", e.target.value)}
-                      placeholder="Citation and regulation text"
-                    />
+                  <div className="sh-field-head">
+                    <label htmlFor={`ref-${i}-reference`}>Reference</label>
                     <FieldToolbar
                       text={item.reference}
                       draft={draftDoc?.refs[i]?.reference ?? ""}
                       onGenerate={() => setRefField(i, "reference", draftDoc?.refs[i]?.reference ?? "")}
                     />
                   </div>
+                  <textarea
+                    id={`ref-${i}-reference`}
+                    className="input"
+                    rows={6}
+                    value={item.reference}
+                    onChange={(e) => setRefField(i, "reference", e.target.value)}
+                    placeholder="Citation and regulation text"
+                  />
                 </div>
                 <div className="field">
-                  <label htmlFor={`ref-${i}-details`}>Details discussed</label>
-                  <div className="sh-field-wrap">
-                    <textarea
-                      id={`ref-${i}-details`}
-                      className="input"
-                      rows={6}
-                      value={item.details}
-                      onChange={(e) => setRefField(i, "details", e.target.value)}
-                      placeholder="What was discussed with the site representative"
-                    />
+                  <div className="sh-field-head">
+                    <label htmlFor={`ref-${i}-details`}>Details discussed</label>
                     <FieldToolbar
                       text={item.details}
                       draft={draftDoc?.refs[i]?.details ?? ""}
                       onGenerate={() => setRefField(i, "details", draftDoc?.refs[i]?.details ?? "")}
                     />
                   </div>
+                  <textarea
+                    id={`ref-${i}-details`}
+                    className="input"
+                    rows={6}
+                    value={item.details}
+                    onChange={(e) => setRefField(i, "details", e.target.value)}
+                    placeholder="What was discussed with the site representative"
+                  />
                 </div>
               </div>
               <EvidenceRow codes={item.evidence} onOpen={setViewing} />
