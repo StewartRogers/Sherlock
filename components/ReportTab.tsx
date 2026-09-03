@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EVIDENCE_BY_CODE } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
+import { CheckIcon, CopyIcon, SparkleIcon } from "./icons";
 
 /** Evidence codes are all photographic in this prototype; certificates and
  * open items share the same construction-site stand-in image. */
@@ -23,11 +24,59 @@ function EvidenceRow({ codes, onOpen }: { codes: string[]; onOpen: (item: Eviden
   );
 }
 
+/**
+ * Copy-to-clipboard and insert-AI-draft controls, pinned to a textarea's
+ * top-right corner. "Generate AI" re-inserts Sherlock's drafted text for
+ * this field (the same source the field was pre-populated from) — useful
+ * once an inspector has edited a field away from the draft and wants it
+ * back. It's disabled where no draft exists for the field (e.g. an order
+ * added beyond the seeded ones).
+ */
+function FieldToolbar({ text, draft, onGenerate }: { text: string; draft: string; onGenerate: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const canGenerate = draft.trim().length > 0;
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard permission denied or unavailable; nothing more to do */
+    }
+  }
+
+  return (
+    <div className="sh-field-toolbar">
+      <button
+        type="button"
+        className={`sh-field-toolbar-btn ${copied ? "sh-field-toolbar-btn--ok" : ""}`}
+        onClick={handleCopy}
+        aria-label={copied ? "Copied" : "Copy text"}
+        title={copied ? "Copied" : "Copy text"}
+      >
+        {copied ? <CheckIcon /> : <CopyIcon />}
+      </button>
+      <button
+        type="button"
+        className="sh-field-toolbar-btn"
+        onClick={onGenerate}
+        disabled={!canGenerate}
+        aria-label="Insert Sherlock's AI draft"
+        title={canGenerate ? "Insert Sherlock's AI draft" : "No AI draft available for this item"}
+      >
+        <SparkleIcon />
+      </button>
+    </div>
+  );
+}
+
 export function ReportTab() {
   const {
     caseEmployers,
     activeReportEmployer,
     reportDoc,
+    defaultDoc,
     setReportEmployer,
     setReportNote,
     setOrderText,
@@ -36,6 +85,7 @@ export function ReportTab() {
     addRef,
   } = useSherlock();
   const [viewing, setViewing] = useState<EvidenceViewItem | null>(null);
+  const draftDoc = activeReportEmployer ? defaultDoc(activeReportEmployer, caseEmployers) : null;
 
   return (
     <div>
@@ -72,14 +122,17 @@ export function ReportTab() {
       <div className="sh-measure" style={{ marginBottom: "var(--space-6)" }}>
         <div className="field">
           <label htmlFor="report-note">Inspection note</label>
-          <textarea
-            id="report-note"
-            className="input"
-            rows={21}
-            value={reportDoc.note}
-            onChange={(e) => setReportNote(e.target.value)}
-            placeholder="Notes for this employer"
-          />
+          <div className="sh-field-wrap">
+            <textarea
+              id="report-note"
+              className="input"
+              rows={21}
+              value={reportDoc.note}
+              onChange={(e) => setReportNote(e.target.value)}
+              placeholder="Notes for this employer"
+            />
+            <FieldToolbar text={reportDoc.note} draft={draftDoc?.note ?? ""} onGenerate={() => setReportNote(draftDoc?.note ?? "")} />
+          </div>
           <EvidenceRow codes={reportDoc.noteEvidence} onOpen={setViewing} />
         </div>
       </div>
@@ -90,14 +143,21 @@ export function ReportTab() {
           {reportDoc.orders.map((item, i) => (
             <div className="field" style={{ marginBottom: "var(--space-4)" }} key={item.code}>
               <label htmlFor={`order-${i}`}>{item.code}</label>
-              <textarea
-                id={`order-${i}`}
-                className="input"
-                rows={9}
-                value={item.text}
-                onChange={(e) => setOrderText(i, e.target.value)}
-                placeholder="Statement of the issue"
-              />
+              <div className="sh-field-wrap">
+                <textarea
+                  id={`order-${i}`}
+                  className="input"
+                  rows={9}
+                  value={item.text}
+                  onChange={(e) => setOrderText(i, e.target.value)}
+                  placeholder="Statement of the issue"
+                />
+                <FieldToolbar
+                  text={item.text}
+                  draft={draftDoc?.orders[i]?.text ?? ""}
+                  onGenerate={() => setOrderText(i, draftDoc?.orders[i]?.text ?? "")}
+                />
+              </div>
               <EvidenceRow codes={item.evidence} onOpen={setViewing} />
             </div>
           ))}
@@ -116,25 +176,39 @@ export function ReportTab() {
               <div className="sh-cols">
                 <div className="field">
                   <label htmlFor={`ref-${i}-reference`}>Reference</label>
-                  <textarea
-                    id={`ref-${i}-reference`}
-                    className="input"
-                    rows={6}
-                    value={item.reference}
-                    onChange={(e) => setRefField(i, "reference", e.target.value)}
-                    placeholder="Citation and regulation text"
-                  />
+                  <div className="sh-field-wrap">
+                    <textarea
+                      id={`ref-${i}-reference`}
+                      className="input"
+                      rows={6}
+                      value={item.reference}
+                      onChange={(e) => setRefField(i, "reference", e.target.value)}
+                      placeholder="Citation and regulation text"
+                    />
+                    <FieldToolbar
+                      text={item.reference}
+                      draft={draftDoc?.refs[i]?.reference ?? ""}
+                      onGenerate={() => setRefField(i, "reference", draftDoc?.refs[i]?.reference ?? "")}
+                    />
+                  </div>
                 </div>
                 <div className="field">
                   <label htmlFor={`ref-${i}-details`}>Details discussed</label>
-                  <textarea
-                    id={`ref-${i}-details`}
-                    className="input"
-                    rows={6}
-                    value={item.details}
-                    onChange={(e) => setRefField(i, "details", e.target.value)}
-                    placeholder="What was discussed with the site representative"
-                  />
+                  <div className="sh-field-wrap">
+                    <textarea
+                      id={`ref-${i}-details`}
+                      className="input"
+                      rows={6}
+                      value={item.details}
+                      onChange={(e) => setRefField(i, "details", e.target.value)}
+                      placeholder="What was discussed with the site representative"
+                    />
+                    <FieldToolbar
+                      text={item.details}
+                      draft={draftDoc?.refs[i]?.details ?? ""}
+                      onGenerate={() => setRefField(i, "details", draftDoc?.refs[i]?.details ?? "")}
+                    />
+                  </div>
                 </div>
               </div>
               <EvidenceRow codes={item.evidence} onOpen={setViewing} />
