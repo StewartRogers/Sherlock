@@ -52,8 +52,6 @@ interface SherlockState {
   recording: boolean;
   transcript: string;
   notes: Note[];
-  draftNoteEmployers: string[];
-  editingNoteId: number | null;
   scanPages: ScanPage[];
   documents: UploadedDocument[];
   /** Evidence code -> included in the report as a primary exhibit. */
@@ -84,8 +82,6 @@ const INITIAL: SherlockState = {
   recording: false,
   transcript: "",
   notes: [],
-  draftNoteEmployers: [],
-  editingNoteId: null,
   scanPages: [],
   documents: [],
   primaryMap: { "E-1": true, "E-2": true },
@@ -111,8 +107,6 @@ const PER_CASE_RESET = {
   recording: INITIAL.recording,
   transcript: INITIAL.transcript,
   notes: INITIAL.notes,
-  draftNoteEmployers: INITIAL.draftNoteEmployers,
-  editingNoteId: INITIAL.editingNoteId,
   scanPages: INITIAL.scanPages,
   documents: INITIAL.documents,
   primaryMap: INITIAL.primaryMap,
@@ -124,9 +118,8 @@ const PER_CASE_RESET = {
 } satisfies Partial<SherlockState>;
 
 /**
- * Note codes are positional, so they have to be re-derived whenever the set
- * changes. Renumbering only the note that moved would leave a gap that the
- * next save fills, producing two notes with the same code.
+ * Note codes are positional, so they have to be re-derived over the whole list
+ * whenever the set changes rather than counted from one kind's length.
  */
 function renumberNotes(notes: Note[]): Note[] {
   const seq: Record<NoteKind, number> = { note: 0, request: 0 };
@@ -290,15 +283,6 @@ function useSherlockState() {
     (transcript: string) => patch(() => ({ transcript })),
     [patch],
   );
-  const toggleDraftNoteEmployer = useCallback(
-    (id: string) =>
-      patch((s) => ({
-        draftNoteEmployers: s.draftNoteEmployers.includes(id)
-          ? s.draftNoteEmployers.filter((v) => v !== id)
-          : [...s.draftNoteEmployers, id],
-      })),
-    [patch],
-  );
   const saveNote = useCallback(
     (kind: NoteKind) =>
       patch((s) => {
@@ -310,20 +294,15 @@ function useSherlockState() {
             {
               id: Date.now(),
               text,
-              employers: s.draftNoteEmployers,
+              employers: [],
               kind,
               code: "",
             },
           ]),
           transcript: "",
-          draftNoteEmployers: [],
           recording: false,
         };
       }),
-    [patch],
-  );
-  const editNoteTags = useCallback(
-    (id: number) => patch((s) => ({ editingNoteId: s.editingNoteId === id ? null : id })),
     [patch],
   );
   const toggleNoteEmployer = useCallback(
@@ -348,13 +327,6 @@ function useSherlockState() {
             : s.removedGraphLinks,
         };
       }),
-    [patch],
-  );
-  const setNoteKind = useCallback(
-    (id: number, kind: NoteKind) =>
-      patch((s) => ({
-        notes: renumberNotes(s.notes.map((n) => (n.id !== id ? n : { ...n, kind }))),
-      })),
     [patch],
   );
 
@@ -665,11 +637,8 @@ function useSherlockState() {
     applyTagsToUntagged,
     toggleRecord,
     setTranscript,
-    toggleDraftNoteEmployer,
     saveNote,
-    editNoteTags,
     toggleNoteEmployer,
-    setNoteKind,
     scanPage,
     setScanPageText,
     addDocuments,

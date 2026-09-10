@@ -73,6 +73,6 @@ Deliberately unfixed; raise them before "fixing" one as a surprise.
   static `CASE_EVIDENCE` slots. Wiring it up is a design decision, not a mechanical fix.
 - **`E-8` is capturable but has no case-evidence row**, so it never reaches the Case
   folder, the graph, or chat.
-- **Notes and Requests share one composer draft** (`transcript`, `draftNoteEmployers`).
+- **Notes and Requests share one composer draft** (`transcript`).
 - **The graph re-runs its whole force layout on every edge change**, so the diagram
   reshuffles when a link is added or removed.

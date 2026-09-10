@@ -1,6 +1,5 @@
 "use client";
 
-import { employerLabels } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import type { NoteKind } from "@/lib/types";
 import { MicIcon } from "./icons";
@@ -52,15 +51,10 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
     notes,
     transcript,
     recording,
-    draftNoteEmployers,
-    editingNoteId,
-    toggleDraftNoteEmployer,
     setTranscript,
     toggleRecord,
     saveNote,
-    editNoteTags,
     toggleNoteEmployer,
-    setNoteKind,
   } = useSherlock();
 
   const copy = COPY[kind];
@@ -73,33 +67,7 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
       <p className="sh-meta">{copy.blurb}</p>
 
       <div className="sh-measure" style={{ marginTop: "var(--space-4)" }}>
-        <div className="sh-section field" style={{ marginTop: 0 }}>
-          <span className="field-label" id={`${kind}-employer-label`}>
-            Employer
-          </span>
-          <div
-            style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
-            role="group"
-            aria-labelledby={`${kind}-employer-label`}
-          >
-            {caseEmployers.map((ce) => {
-              const active = draftNoteEmployers.includes(ce.id);
-              return (
-                <button
-                  type="button"
-                  key={ce.id}
-                  className={`sh-pillbtn ${active ? "active" : ""}`}
-                  aria-pressed={active}
-                  onClick={() => toggleDraftNoteEmployer(ce.id)}
-                >
-                  {ce.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="sh-meta" style={{ fontSize: 12, marginTop: "var(--space-3)" }}>
+        <div className="sh-meta" style={{ fontSize: 12 }}>
           Will be logged as {nextCode}
         </div>
         <textarea
@@ -162,13 +130,13 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
                 .slice()
                 .reverse()
                 .map((n) => {
-                  const isEditing = editingNoteId === n.id;
-                  const tagLine = employerLabels(n.employers, caseEmployers);
+                  /* Tagged in place, the same way photos are on the Capture tab. */
+                  const tagged = n.employers.some((id) => caseEmployers.some((c) => c.id === id));
                   return (
                     <div
                       className="sh-row"
                       key={n.id}
-                      style={{ flexDirection: "column", alignItems: "stretch", gap: 4 }}
+                      style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}
                     >
                       <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
                         <span className={n.kind === "request" ? "tag tag-accent-2" : "tag tag-neutral"}>
@@ -176,64 +144,27 @@ export function NoteRequestPanel({ kind }: { kind: NoteKind }) {
                         </span>
                         <div style={{ fontSize: 14, flex: 1 }}>{n.text}</div>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "baseline",
-                          gap: "var(--space-3)",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <div className="sh-row-meta" style={{ flex: 1 }}>
-                          {tagLine}
-                        </div>
-                        <button
-                          type="button"
-                          className="sh-pillbtn"
-                          onClick={() => editNoteTags(n.id)}
-                          aria-expanded={isEditing}
-                        >
-                          {isEditing ? "Done" : "Edit tags"}
-                        </button>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {caseEmployers.map((ce) => {
+                          const active = n.employers.includes(ce.id);
+                          return (
+                            <button
+                              type="button"
+                              key={ce.id}
+                              className={`sh-pillbtn ${active ? "active" : ""}`}
+                              aria-pressed={active}
+                              onClick={() => toggleNoteEmployer(n.id, ce.id)}
+                            >
+                              {ce.label}
+                            </button>
+                          );
+                        })}
+                        {!tagged && (
+                          <span className="sh-meta" style={{ fontSize: 12, alignSelf: "center" }}>
+                            No employer tagged yet
+                          </span>
+                        )}
                       </div>
-                      {isEditing && (
-                        <>
-                          <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
-                            <button
-                              type="button"
-                              className={`sh-pillbtn ${n.kind !== "request" ? "active" : ""}`}
-                              aria-pressed={n.kind !== "request"}
-                              onClick={() => setNoteKind(n.id, "note")}
-                            >
-                              Move to Notes
-                            </button>
-                            <button
-                              type="button"
-                              className={`sh-pillbtn ${n.kind === "request" ? "active" : ""}`}
-                              aria-pressed={n.kind === "request"}
-                              onClick={() => setNoteKind(n.id, "request")}
-                            >
-                              Move to Requests
-                            </button>
-                          </div>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
-                            {caseEmployers.map((ce) => {
-                              const active = n.employers.includes(ce.id);
-                              return (
-                                <button
-                                  type="button"
-                                  key={ce.id}
-                                  className={`sh-pillbtn ${active ? "active" : ""}`}
-                                  aria-pressed={active}
-                                  onClick={() => toggleNoteEmployer(n.id, ce.id)}
-                                >
-                                  {ce.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )}
                     </div>
                   );
                 })}

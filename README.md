@@ -59,7 +59,7 @@ An inspector opens a casefile and works through eight sections:
 | Section | What it does |
 | --- | --- |
 | **Capture** | Shutter adds photo evidence (`E-10`, `E-11`, …). Each photo is tagged to one or more employers on site; a bulk action copies the current tags onto every still-untagged photo. |
-| **Notes** | Dictate or type a note, tag it, and save it as a Note (`N-1`). Saved entries can be retagged or reclassified afterwards. |
+| **Notes** | Dictate or type a note and save it as a Note (`N-1`). Each saved note is tagged to one or more employers in place, the same way photos are on Capture. |
 | **Requests** | The same composer filtered to Requests (`REQ-1`). Notes and Requests share one draft, so text typed on one tab is still there on the other. |
 | **Scan** | Multi-page document scanning with a running notes field. |
 | **Documents** | Upload files from the device, by picker or drag-and-drop, and tag each to an employer. Files over 25 MB are refused. |
