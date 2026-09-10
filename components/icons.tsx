@@ -18,6 +18,15 @@ export function BackIcon() {
   );
 }
 
+export function ProfileIcon() {
+  return (
+    <svg {...box} fill="currentColor" aria-hidden="true">
+      <path opacity="0.35" d="M4 21a8 8 0 0 1 16 0z" />
+      <circle cx="12" cy="8" r="4" />
+    </svg>
+  );
+}
+
 export function CameraIcon() {
   return (
     <svg {...box} fill="currentColor" aria-hidden="true">

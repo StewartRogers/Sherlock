@@ -12,6 +12,7 @@ import {
   CAPTURE_PHOTOS,
   CARRIED_NOTES,
   CARRIED_PHOTOS,
+  CASE_EVIDENCE,
   DEFAULT_EMPLOYERS,
   EMPLOYER_SLOTS,
   NEW_CASE_STAMP,
@@ -142,6 +143,45 @@ export function edgeKey(a: string, b: string): string {
   return [a, b].sort().join("::");
 }
 
+/** The recent-case list with the live casefile's card updated, so Home and
+    All casefiles show what the Profile tab changed. */
+function withActiveCase(s: SherlockState, changes: Partial<RecentCase>): RecentCase[] {
+  return s.recentCases.map((c) => (c.id === s.activeCaseId ? { ...c, ...changes } : c));
+}
+
+/** True when another employer on the casefile already has this name. */
+function isDuplicateEmployer(employers: Employer[], label: string, exceptId?: string): boolean {
+  const key = label.trim().toLowerCase();
+  return employers.some((e) => e.id !== exceptId && e.label.trim().toLowerCase() === key);
+}
+
+/**
+ * Everything tagged to an employer, as the codes the inspector sees — empty
+ * means it is safe to delete. Seeded case evidence and the seeded report count:
+ * both are authored against the positional EMPLOYER_SLOTS, so an employer in a
+ * slot always has something here, and deleting one can never shift a later
+ * employer into a slot it doesn't own.
+ */
+function employerUsage(
+  s: SherlockState,
+  empId: string,
+  docFor: (empId: string, employers: Employer[]) => ReportDoc,
+): string[] {
+  const slot = EMPLOYER_SLOTS[s.caseEmployers.findIndex((c) => c.id === empId)];
+  const used: string[] = [];
+  for (const e of CASE_EVIDENCE) if (slot && e.employer === slot) used.push(e.code);
+  CAPTURE_PHOTOS.slice(0, s.captureStep).forEach((p, i) => {
+    if ((s.captureEmployer[i] ?? []).includes(empId)) used.push(p.code);
+  });
+  for (const n of s.notes) if (n.employers.includes(empId)) used.push(n.code);
+  for (const d of s.documents) if (d.employers.includes(empId)) used.push(d.code);
+  const doc = s.reportDocs[empId] ?? docFor(empId, s.caseEmployers);
+  used.push(...doc.orders.map((o) => o.code), ...doc.refs.map((r) => r.code));
+  if (doc.note.trim()) used.push("report note");
+  if (s.graphLinks.some(([a, b]) => a === empId || b === empId)) used.push("graph link");
+  return [...new Set(used)];
+}
+
 function useSherlockState() {
   const [state, setState] = useState<SherlockState>(INITIAL);
 
@@ -241,6 +281,53 @@ function useSherlockState() {
           newEmployerText: "",
           newCaseAddress: "",
           reportEmployer: employers[0].id,
+        };
+      }),
+    [patch],
+  );
+
+  /* — casefile profile — */
+  const setCaseAddress = useCallback(
+    (value: string) =>
+      patch((s) => {
+        const address = value.trim();
+        if (!address) return null;
+        return { caseAddress: address, recentCases: withActiveCase(s, { address }) };
+      }),
+    [patch],
+  );
+  const addCaseEmployer = useCallback(
+    (value: string) =>
+      patch((s) => {
+        const label = value.trim();
+        if (!label || isDuplicateEmployer(s.caseEmployers, label)) return null;
+        /* Not `emp${length}`: after a delete that would re-issue a live id,
+           and the newcomer would inherit that employer's tags and graph edges. */
+        const caseEmployers = [...s.caseEmployers, { id: `emp-${Date.now()}`, label }];
+        return {
+          caseEmployers,
+          recentCases: withActiveCase(s, { employers: caseEmployers.map((e) => e.label) }),
+        };
+      }),
+    [patch],
+  );
+  const renameCaseEmployer = useCallback(
+    (id: string, value: string) =>
+      patch((s) => {
+        const label = value.trim();
+        const current = s.caseEmployers.find((e) => e.id === id);
+        if (!current || !label || isDuplicateEmployer(s.caseEmployers, label, id)) return null;
+        const caseEmployers = s.caseEmployers.map((e) => (e.id === id ? { ...e, label } : e));
+        /* A casefile started this session is named after its first employer;
+           keep that name in step instead of preserving a typo. */
+        const entry = s.recentCases.find((c) => c.id === s.activeCaseId);
+        const renamesCase = entry?.name === current.label && s.caseEmployers[0]?.id === id;
+        return {
+          caseEmployers,
+          recentCases: withActiveCase(s, {
+            employers: caseEmployers.map((e) => e.label),
+            ...(renamesCase ? { name: label } : {}),
+          }),
         };
       }),
     [patch],
@@ -520,6 +607,28 @@ function useSherlockState() {
     [patch, defaultDoc],
   );
 
+  /** Codes tagged to an employer; the Profile tab only offers Delete when this is empty. */
+  const employerTags = (empId: string) => employerUsage(state, empId, defaultDoc);
+  const removeCaseEmployer = useCallback(
+    (id: string) =>
+      patch((s) => {
+        if (s.caseEmployers.length <= 1) return null;
+        if (employerUsage(s, id, defaultDoc).length) return null;
+        const caseEmployers = s.caseEmployers.filter((e) => e.id !== id);
+        const reportDocs = { ...s.reportDocs };
+        delete reportDocs[id];
+        return {
+          caseEmployers,
+          reportDocs,
+          removedGraphLinks: s.removedGraphLinks.filter((k) => !k.split("::").includes(id)),
+          selectedGraphNode: s.selectedGraphNode === id ? null : s.selectedGraphNode,
+          reportEmployer: s.reportEmployer === id ? caseEmployers[0].id : s.reportEmployer,
+          recentCases: withActiveCase(s, { employers: caseEmployers.map((e) => e.label) }),
+        };
+      }),
+    [patch, defaultDoc],
+  );
+
   /* — graph — */
   const selectGraphNode = useCallback(
     (id: string) =>
@@ -631,6 +740,11 @@ function useSherlockState() {
     addEmployer,
     removeNewEmployer,
     startInspection,
+    setCaseAddress,
+    addCaseEmployer,
+    renameCaseEmployer,
+    employerTags,
+    removeCaseEmployer,
     shutter,
     dismissNudge,
     toggleCaptureEmployer,

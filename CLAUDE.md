@@ -39,6 +39,10 @@ a fresh `--omit=dev` install will make `npm run lint` fail with "eslint: not fou
   `removedGraphLinks` suppresses them by `edgeKey()`. Any code path that re-applies a tag
   must clear the matching key, and any path that deletes a node must purge both lists —
   otherwise the graph contradicts the tags.
+- **Employers are only deletable when `employerUsage()` is empty.** It counts the seeded
+  `CASE_EVIDENCE` and report defaults as well as live tags, which is what keeps the two
+  slot employers undeletable — removing one would shift a later employer into its slot.
+  A new tag type must be added there, or the Profile tab will let a tagged employer go.
 
 ## Security
 

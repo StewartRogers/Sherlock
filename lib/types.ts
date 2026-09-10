@@ -9,7 +9,8 @@ export type Tab =
   | "more"
   | "case"
   | "report"
-  | "graph";
+  | "graph"
+  | "profile";
 
 export type NoteKind = "note" | "request";
 

@@ -9,6 +9,7 @@ import { CaseFolderTab } from "./CaseFolderTab";
 import { GraphTab } from "./GraphTab";
 import { MoreTab } from "./MoreTab";
 import { NotesTab } from "./NotesTab";
+import { ProfileTab } from "./ProfileTab";
 import { ReportTab } from "./ReportTab";
 import { RequestsTab } from "./RequestsTab";
 import { ScanTab } from "./ScanTab";
@@ -20,6 +21,7 @@ import {
   GraphIcon,
   MoreIcon,
   NoteIcon,
+  ProfileIcon,
   ReportIcon,
   RequestIcon,
   ScanIcon,
@@ -51,6 +53,7 @@ const PANELS: Record<Tab, ComponentType> = {
   case: CaseFolderTab,
   report: ReportTab,
   graph: GraphTab,
+  profile: ProfileTab,
 };
 
 export function AppScreen() {
@@ -78,6 +81,17 @@ export function AppScreen() {
           }}
         >
           <BackIcon />
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "profile"}
+          className={`sh-tab ${tab === "profile" ? "active" : ""}`}
+          onClick={() => setTab("profile")}
+        >
+          <ProfileIcon />
+          <span className="sh-tab-label">Profile</span>
         </button>
 
         {TABS.map(({ tab: t, label, icon: Icon, wide }) => (

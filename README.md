@@ -58,6 +58,7 @@ An inspector opens a casefile and works through eight sections:
 
 | Section | What it does |
 | --- | --- |
+| **Profile** | The casefile's site address (typed or from "Use my location") and its employers, editable after the inspection starts. An employer can be renamed at any time but only deleted once nothing is tagged to it. |
 | **Capture** | Shutter adds photo evidence (`E-10`, `E-11`, …). Each photo is tagged to one or more employers on site; a bulk action copies the current tags onto every still-untagged photo. |
 | **Notes** | Dictate or type a note and save it as a Note (`N-1`). Each saved note is tagged to one or more employers in place, the same way photos are on Capture. |
 | **Requests** | The same composer filtered to Requests (`REQ-1`). Notes and Requests share one draft, so text typed on one tab is still there on the other. |
@@ -156,6 +157,7 @@ means editing that token block, not the components.
 ├── components/
 │   ├── AppScreen.tsx      # tab bar and panel switching
 │   ├── HomeScreen.tsx  AllCasesScreen.tsx  NewCaseScreen.tsx
+│   ├── ProfileTab.tsx     # casefile address and employers, from the header
 │   ├── CaptureTab.tsx  ScanTab.tsx  UploadTab.tsx  MoreTab.tsx
 │   ├── NotesTab.tsx  RequestsTab.tsx  NoteRequestPanel.tsx
 │   ├── CaseFolderTab.tsx  ReportTab.tsx  GraphTab.tsx
@@ -169,6 +171,7 @@ means editing that token block, not the components.
 │   ├── chat.ts            # the offline answer engine behind ChatPanel
 │   ├── data.ts            # seed casefiles, evidence, report copy, graph
 │   ├── store.tsx          # single in-memory store behind a React context
+│   ├── useCurrentLocation.ts # "Use my location" → nearest known jobsite
 │   └── types.ts
 ├── proxy.ts               # passcode gate on every route (was middleware.ts)
 ├── eslint.config.mjs
