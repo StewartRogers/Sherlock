@@ -108,11 +108,22 @@ export function MoreIcon() {
   );
 }
 
+/** Two overlapping pages, outlined — the back page's first text line runs into the front page. */
 export function CopyIcon() {
   return (
-    <svg {...box} fill="currentColor" aria-hidden="true">
-      <path opacity="0.35" d="M4 3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h1V6a3 3 0 0 1 3-3z" />
-      <path d="M9 3h9a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+    <svg
+      {...box}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9.5 17.5h-7v-16h9l3 3v2" />
+      <path d="M11.5 1.5v3h3M5 6.5h4.5M5 10h4.5M5 13.5h4.5" />
+      <path d="M9.5 6.5h9l3 3v13h-12z" />
+      <path d="M18.5 6.5v3h3M12 12.5h4.5M18 12.5h1M12 16h7M12 19.5h7" />
     </svg>
   );
 }
@@ -125,11 +136,27 @@ export function CheckIcon() {
   );
 }
 
-export function SparkleIcon() {
+/** "AI" in an open rounded square, with a four-point star in the gap at its corner. */
+export function AiIcon() {
   return (
-    <svg {...box} fill="currentColor" aria-hidden="true">
-      <path d="M11 2l1.8 4.6L17.4 8.4l-4.6 1.8L11 14.8 9.2 10.2 4.6 8.4l4.6-1.8z" />
-      <path opacity="0.35" d="M18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" />
+    <svg {...box} fill="none" aria-hidden="true">
+      <path
+        d="M20 12V7a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v9a4 4 0 0 0 4 4h5"
+        stroke="currentColor"
+        strokeWidth={1.9}
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 15.5l2.5-7 2.5 7M9 13h3M15.5 8.5v7"
+        stroke="currentColor"
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M18.5 14q.7 3.8 4.5 4.5-3.8.7-4.5 4.5-.7-3.8-4.5-4.5 3.8-.7 4.5-4.5z"
+        fill="currentColor"
+      />
     </svg>
   );
 }

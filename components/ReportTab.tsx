@@ -4,7 +4,7 @@ import { useState } from "react";
 import { EVIDENCE_BY_CODE } from "@/lib/data";
 import { useSherlock } from "@/lib/store";
 import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
-import { CheckIcon, CopyIcon, SparkleIcon } from "./icons";
+import { AiIcon, CheckIcon, CopyIcon } from "./icons";
 
 /** Evidence codes are all photographic in this prototype; certificates and
  * open items share the same construction-site stand-in image. */
@@ -65,7 +65,7 @@ function FieldToolbar({ text, draft, onGenerate }: { text: string; draft: string
         aria-label="Insert Sherlock's AI draft"
         title={canGenerate ? "Insert Sherlock's AI draft" : "No AI draft available for this item"}
       >
-        <SparkleIcon />
+        <AiIcon />
       </button>
     </div>
   );
