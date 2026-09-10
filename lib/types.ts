@@ -55,10 +55,18 @@ export interface Note {
   code: string;
 }
 
-/** A drafted order, with the evidence codes it was drawn from. */
+/**
+ * A drafted order, with the evidence codes it was drawn from. Split the way
+ * the destination form takes it: the inspector's observations, the fixed
+ * contravention wording (citation plus regulation text), and the measures to
+ * ensure compliance — so each editable part can be copied on its own.
+ */
 export interface ReportItem {
   code: string;
-  text: string;
+  observations: string;
+  /** Read-only on the Report tab; empty for an order with no regulation cited. */
+  contravention: string;
+  measures: string;
   evidence: string[];
 }
 

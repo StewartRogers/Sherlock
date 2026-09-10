@@ -6,6 +6,7 @@ import type {
   JobsiteLocation,
   RecentCase,
   ReportDoc,
+  ReportItem,
 } from "./types";
 
 const DESC = {
@@ -47,12 +48,16 @@ export const REPORT_DEFAULTS: ReportDoc[] = [
     orders: [
       {
         code: "ORD-1",
-        text: "I observed a worker for Rainshield Roofing performing roofing work on a 4:12 sloped roof (confirmed using a roof slope calculator). The worker was not protected by a system of fall protection and was exposed to a fall hazard of approximately 24 feet (confirmed using a Hilti measuring laser) above hard-packed ground covered in construction debris.\n\nThis is in contravention of the Occupational Health and Safety Regulation Section 11.2(1)(a).\n\nUnless elsewhere provided for in this Regulation, an employer must ensure that a fall protection system is used when work is being done at a place from which a fall of 3 m (10 ft) or more may occur.\n\nMeasures to Ensure Compliance:\nPrior to resuming work at heights, the employer must demonstrate a compliant fall protection system appropriate for the work to be performed.",
+        observations: "I observed a worker for Rainshield Roofing performing roofing work on a 4:12 sloped roof (confirmed using a roof slope calculator). The worker was not protected by a system of fall protection and was exposed to a fall hazard of approximately 24 feet (confirmed using a Hilti measuring laser) above hard-packed ground covered in construction debris.",
+        contravention: "This is in contravention of the Occupational Health and Safety Regulation Section 11.2(1)(a).\n\nUnless elsewhere provided for in this Regulation, an employer must ensure that a fall protection system is used when work is being done at a place from which a fall of 3 m (10 ft) or more may occur.",
+        measures: "Prior to resuming work at heights, the employer must demonstrate a compliant fall protection system appropriate for the work to be performed.",
         evidence: ["E-1", "E-2", "E-3", "E-4", "E-5"],
       },
       {
         code: "ORD-2",
-        text: "I determined that the worker for Rainshield Roofing was at high risk of death or serious injury from a fall hazard of approximately 24 feet to the hard-packed ground below, which was covered in construction debris. No compliant fall protection equipment was available on site, and the worker had not received the instruction, training, or supervision required to work safely at heights.\n\nThis is in contravention of the Workers Compensation Act Section 90(2).\n\nThe Board may make an order under subsection (1) if the Board has reasonable grounds for believing there is a high risk of serious injury, serious illness or death to a worker at the workplace.\n\nMeasures to Ensure Compliance:\nAll work at heights on this site must stop immediately. Before work resumes, the employer must demonstrate that a compliant fall protection system is available and in use, and that workers have received the required instruction, training, and supervision to work safely at heights.",
+        observations: "I determined that the worker for Rainshield Roofing was at high risk of death or serious injury from a fall hazard of approximately 24 feet to the hard-packed ground below, which was covered in construction debris. No compliant fall protection equipment was available on site, and the worker had not received the instruction, training, or supervision required to work safely at heights.",
+        contravention: "This is in contravention of the Workers Compensation Act Section 90(2).\n\nThe Board may make an order under subsection (1) if the Board has reasonable grounds for believing there is a high risk of serious injury, serious illness or death to a worker at the workplace.",
+        measures: "All work at heights on this site must stop immediately. Before work resumes, the employer must demonstrate that a compliant fall protection system is available and in use, and that workers have received the required instruction, training, and supervision to work safely at heights.",
         evidence: ["E-1", "E-2", "E-3", "E-4", "E-5"],
       },
     ],
@@ -73,7 +78,9 @@ export const REPORT_DEFAULTS: ReportDoc[] = [
     orders: [
       {
         code: "ORD-3",
-        text: "Two workers were cutting and loading material at ground level with no one directing the work. A supervisor's vehicle was on site, but no supervisor was present or visible during the walkthrough. This reads as a supervision gap rather than a specific task hazard, and may involve both Meridian Construction and Rainshield Roofing depending on whose workers were involved. Confirm the employer relationship and the supervision requirement against the evidence below, then draft the order in WSM 360.",
+        observations: "Two workers were cutting and loading material at ground level with no one directing the work. A supervisor's vehicle was on site, but no supervisor was present or visible during the walkthrough. This reads as a supervision gap rather than a specific task hazard, and may involve both Meridian Construction and Rainshield Roofing depending on whose workers were involved. Confirm the employer relationship and the supervision requirement against the evidence below, then draft the order in WSM 360.",
+        contravention: "",
+        measures: "",
         evidence: ["E-6"],
       },
     ],
@@ -275,6 +282,17 @@ export function employerLabels(ids: string[], employers: Employer[]): string {
     .map((id) => employers.find((e) => e.id === id)?.label)
     .filter((label): label is string => Boolean(label));
   return labels.length ? labels.join(", ") : "Unassigned";
+}
+
+/** An order's parts as one block, for places that show or search the whole order. */
+export function orderText(order: ReportItem): string {
+  return [
+    order.observations.trim(),
+    order.contravention.trim(),
+    order.measures.trim() && `Measures to Ensure Compliance:\n${order.measures.trim()}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 /** A short file-type label for a document's stand-in thumbnail, e.g. "PDF". */

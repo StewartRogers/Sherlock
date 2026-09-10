@@ -79,7 +79,7 @@ export function ReportTab() {
     defaultDoc,
     setReportEmployer,
     setReportNote,
-    setOrderText,
+    setOrderField,
     addOrder,
     setRefField,
     addRef,
@@ -141,23 +141,55 @@ export function ReportTab() {
         <div>
           <div className="sh-kicker">Orders</div>
           {reportDoc.orders.map((item, i) => (
-            <div className="field" style={{ marginBottom: "var(--space-4)" }} key={item.code}>
-              <div className="sh-field-head">
-                <label htmlFor={`order-${i}`}>{item.code}</label>
-                <FieldToolbar
-                  text={item.text}
-                  draft={draftDoc?.orders[i]?.text ?? ""}
-                  onGenerate={() => setOrderText(i, draftDoc?.orders[i]?.text ?? "")}
+            <div style={{ marginBottom: "var(--space-4)" }} key={item.code}>
+              <div className="sh-row-title" style={{ fontSize: 13, marginBottom: 6 }}>
+                {item.code}
+              </div>
+              <div className="field">
+                <div className="sh-field-head">
+                  <label htmlFor={`order-${i}-observations`}>Observations</label>
+                  <FieldToolbar
+                    text={item.observations}
+                    draft={draftDoc?.orders[i]?.observations ?? ""}
+                    onGenerate={() => setOrderField(i, "observations", draftDoc?.orders[i]?.observations ?? "")}
+                  />
+                </div>
+                <textarea
+                  id={`order-${i}-observations`}
+                  className="input"
+                  rows={6}
+                  value={item.observations}
+                  onChange={(e) => setOrderField(i, "observations", e.target.value)}
+                  placeholder="What you observed"
                 />
               </div>
-              <textarea
-                id={`order-${i}`}
-                className="input"
-                rows={9}
-                value={item.text}
-                onChange={(e) => setOrderText(i, e.target.value)}
-                placeholder="Statement of the issue"
-              />
+              {item.contravention && (
+                <div
+                  className="sh-order-fixed"
+                  role="note"
+                  aria-label={`${item.code} contravention`}
+                >
+                  {item.contravention}
+                </div>
+              )}
+              <div className="field" style={{ marginTop: "var(--space-3)" }}>
+                <div className="sh-field-head">
+                  <label htmlFor={`order-${i}-measures`}>Measures to Ensure Compliance</label>
+                  <FieldToolbar
+                    text={item.measures}
+                    draft={draftDoc?.orders[i]?.measures ?? ""}
+                    onGenerate={() => setOrderField(i, "measures", draftDoc?.orders[i]?.measures ?? "")}
+                  />
+                </div>
+                <textarea
+                  id={`order-${i}-measures`}
+                  className="input"
+                  rows={4}
+                  value={item.measures}
+                  onChange={(e) => setOrderField(i, "measures", e.target.value)}
+                  placeholder="What the employer must do to comply"
+                />
+              </div>
               <EvidenceRow codes={item.evidence} onOpen={setViewing} />
             </div>
           ))}

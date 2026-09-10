@@ -4,7 +4,7 @@
  * data, the same way the rest of the app fakes AI (e.g. the pre-drafted
  * photo captions in data.ts). Nothing here calls out to a real model.
  */
-import { CASE_EVIDENCE, formatBytes, TYPE_TAG } from "./data";
+import { CASE_EVIDENCE, formatBytes, orderText, TYPE_TAG } from "./data";
 import type { ChatCounts, Employer, EmployerSlot, Note, ReportDoc, ScanPage, UploadedDocument } from "./types";
 
 export interface ChatContext {
@@ -95,7 +95,7 @@ function lookupCode(code: string, ctx: ChatContext): ChatAnswer | null {
     const order = rd.orders.find((o) => o.code === code);
     if (order) {
       return {
-        text: `${code} (order for ${employer.label}) — ${order.text || "(not yet drafted)"}`,
+        text: `${code} (order for ${employer.label}) — ${orderText(order) || "(not yet drafted)"}`,
         sources: [code, ...order.evidence],
       };
     }
@@ -163,7 +163,7 @@ function answerOrders(ctx: ChatContext): ChatAnswer {
   if (all.length === 0) return { text: "No orders have been drafted yet.", sources: [] };
   const lines = all.map(
     ({ employer, order }) =>
-      `${order.code} (${employer.label}): ${order.text ? truncate(order.text, 140) : "(not yet drafted)"}`,
+      `${order.code} (${employer.label}): ${orderText(order) ? truncate(orderText(order), 140) : "(not yet drafted)"}`,
   );
   return { text: `${plural(all.length, "order")} drafted:\n${lines.join("\n")}`, sources: all.map(({ order }) => order.code) };
 }
@@ -221,8 +221,9 @@ function answerKeywordSearch(query: string, ctx: ChatContext): ChatAnswer {
       hits.push({ code: employer.id, label: `Inspection note (${employer.label})`, text: doc.note, score: noteScore });
     }
     for (const o of doc.orders) {
-      const s = score(o.text);
-      if (s > 0) hits.push({ code: o.code, label: `Order (${employer.label})`, text: o.text, score: s });
+      const text = orderText(o);
+      const s = score(text);
+      if (s > 0) hits.push({ code: o.code, label: `Order (${employer.label})`, text, score: s });
     }
     for (const r of doc.refs) {
       const s = score(`${r.reference} ${r.details}`);

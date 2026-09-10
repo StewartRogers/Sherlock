@@ -65,7 +65,7 @@ An inspector opens a casefile and works through eight sections:
 | **Scan** | Multi-page document scanning with a running notes field. |
 | **Documents** | Upload files from the device, by picker or drag-and-drop, and tag each to an employer. Files over 25 MB are refused. |
 | **Case folder** | Every piece of evidence with its employer and type tags — Order, Reference, Request, or Open · needs review — plus primary/secondary exhibit ranking. |
-| **Report content** | One report per employer: inspection note, orders, and regulation references, each editable and extendable. |
+| **Report content** | One report per employer: inspection note, orders, and regulation references, each editable and extendable. An order is split into Observations, its fixed contravention wording, and Measures to Ensure Compliance, so each editable part copies on its own. |
 | **Evidence graph** | An SVG node-link view of Casefile → Employers → Evidence. Selecting a node traces its connections and lightens the rest; anything with no path to an employer is flagged red. Drag from one node to another to link them; the inspector panel removes links. |
 
 The Case folder also carries **Chat with your data** — a deterministic, offline stand-in for

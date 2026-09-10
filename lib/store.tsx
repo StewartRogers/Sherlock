@@ -549,11 +549,11 @@ function useSherlockState() {
     (note: string) => updateDoc((d) => ({ ...d, note })),
     [updateDoc],
   );
-  const setOrderText = useCallback(
-    (i: number, v: string) =>
+  const setOrderField = useCallback(
+    (i: number, field: "observations" | "measures", v: string) =>
       updateDoc((d) => ({
         ...d,
-        orders: d.orders.map((item, j) => (j === i ? { ...item, text: v } : item)),
+        orders: d.orders.map((item, j) => (j === i ? { ...item, [field]: v } : item)),
       })),
     [updateDoc],
   );
@@ -570,7 +570,7 @@ function useSherlockState() {
         return {
           reportDocs: {
             ...s.reportDocs,
-            [emp]: { ...cur, orders: [...cur.orders, { code: `ORD-${total + 1}`, text: "", evidence: [] }] },
+            [emp]: { ...cur, orders: [...cur.orders, { code: `ORD-${total + 1}`, observations: "", contravention: "", measures: "", evidence: [] }] },
           },
         };
       }),
@@ -761,7 +761,7 @@ function useSherlockState() {
     setPrimary,
     setReportEmployer,
     setReportNote,
-    setOrderText,
+    setOrderField,
     addOrder,
     setRefField,
     addRef,

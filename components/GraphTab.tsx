@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { CASE_EVIDENCE, EVIDENCE_BY_CODE, fileExtLabel, formatBytes } from "@/lib/data";
+import { CASE_EVIDENCE, EVIDENCE_BY_CODE, fileExtLabel, formatBytes, orderText } from "@/lib/data";
 import { edgeKey, useSherlock } from "@/lib/store";
 import type { GraphEdge } from "@/lib/types";
 import { EvidenceThumb, EvidenceViewerOverlay, type EvidenceViewItem } from "./EvidenceViewer";
@@ -247,7 +247,7 @@ export function GraphTab() {
           id: `order-${item.code}`,
           label: item.code,
           title: `${item.code} — Order for ${ce.label}`,
-          body: item.text,
+          body: orderText(item),
           kind: "order",
           r: 10,
         }),
