@@ -19,7 +19,7 @@ checks that run today; all three must pass.
 
 ## Requirements
 
-- Node.js 20.9 or newer (required by Next.js 16)
+- Node.js 24.x (pinned in `package.json` `engines`; use 24.22.1 or newer)
 - npm
 
 ## Getting Started
